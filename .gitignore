@@ -209,3 +209,9 @@ __marimo__/
 .DS_Store
 historical_data/
 data/
+package-lock.json
+.clj-kondo/
+.cpcache/
+.shadow-cljs/
+.lsp/
+
