@@ -1,0 +1,18 @@
+{
+    "name": "test_app",
+    "version": "0.1.0",
+    "scripts": {
+        "dev": "shadow-cljs watch app",
+        "build": "shadow-cljs release release",
+        "repl": "shadow-cljs cljs-repl app"
+    },
+    "devDependencies": {
+        "react": "^19.0.0-rc.1",
+        "react-dom": "^19.0.0-rc.1",
+        "shadow-cljs": "^3.2.1"
+    },
+    "dependencies": {
+        "leaflet": "^1.9.4",
+        "react-leaflet": "^5.0.0-rc.2"
+    }
+}
