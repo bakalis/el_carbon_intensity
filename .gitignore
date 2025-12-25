@@ -208,8 +208,9 @@ __marimo__/
 
 .DS_Store
 historical_data/
-data/
 package-lock.json
+node_modules/
+docs/js/cljs-runtime/
 .clj-kondo/
 .cpcache/
 .shadow-cljs/
