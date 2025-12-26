@@ -1,13 +1,17 @@
 (ns components.app
   (:require [components.map :refer [map-component]]
-            [components.region :refer [regions-selector]]))
+            [components.region :refer [regions-selector]]
+            [components.modal :refer [modal]]))
 
 ;; Main app
 (defn app [{mode :mode
             center :center
             zoom :zoom
             on-change :on-change
-            geojson :geojson}]
+            geojson :geojson
+            open :open
+            feature :feature
+            close-modal :close-modal}]
   [:div.app
    [:header
     [:h1 "React-Leaflet ClojureScript App"]
@@ -17,4 +21,7 @@
    (map-component {:mode mode 
                    :center center
                    :zoom zoom
-                   :geojson geojson})])
+                   :geojson geojson})
+   (modal {:open open
+           :feature feature
+           :close-modal close-modal})])

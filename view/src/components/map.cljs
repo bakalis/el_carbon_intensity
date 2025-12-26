@@ -1,5 +1,6 @@
 (ns components.map
- (:require ["react-leaflet" :refer [MapContainer TileLayer GeoJSON]]))
+ (:require ["react-leaflet" :refer [MapContainer TileLayer GeoJSON]]
+           [state.state :refer [open-modal!]]))
 
 (defn geojson-style 
   [layer-index]
@@ -14,17 +15,12 @@
 
 ;; Function called when a feature is clicked
 (defn on-each-feature [feature layer]
-  (let [props (.-properties feature)
-        popup-content (str "<div>"
-                           (reduce-kv (fn [acc k v]
-                                        (str acc "<strong>" (name k) ":</strong> " v "<br/>"))
-                                      ""
-                                      (js->clj props :keywordize-keys true))
-                           "</div>")]
-    (.bindPopup layer popup-content)))
+  (.on layer "click" 
+       (fn [e]
+         (.stopPropagation (.-originalEvent e))
+         (open-modal! (js->clj feature :keywordize-keys true)))))
 
-(defn map-component [{mode :mode
-                      center :center
+(defn map-component [{center :center
                       zoom :zoom
                       geojson :geojson}]
   [:div.map-container
