@@ -74,7 +74,7 @@
             [:> Legend]
             [:> Line {:type "monotone"
                      :dataKey "actual"
-                     :stroke "#4ecdc4"
+                     :stroke "#FFA500"
                      :strokeWidth 2
                      :name "Actual Intensity"
                      :dot {:r 3}}]
@@ -83,7 +83,6 @@
                      :stroke "#667eea"
                      :strokeWidth 2
                      :name "Predicted Intensity"
-                     :strokeDasharray "5 5"
                      :dot {:r 3}}]]]]]))))
 
 ;; New: Date selector component

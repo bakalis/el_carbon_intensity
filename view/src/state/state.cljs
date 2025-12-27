@@ -22,6 +22,7 @@
 
 ;; API configuration
 (def api-base-url "https://elcarbonintensity-bakalis1334-ft6sl0da.leapcell.dev")
+; (def api-base-url "http://localhost:8000")
 
 ;; Fetch carbon intensity data for a zone
 (defn fetch-carbon-intensity! [zone-name request-date]
