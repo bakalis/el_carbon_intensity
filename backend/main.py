@@ -1,14 +1,16 @@
-from fastapi import FastAPI, Query
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
 from typing import List
-from model import CarbonIntensityPrediction
+
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from model import CarbonIntensityPrediction
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://bakalis.github.io",
         "http://localhost:8080",
     ],
     allow_credentials=True,
@@ -16,9 +18,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
 
 @app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
 def get_carbon_intensity_predictions(
@@ -26,7 +30,7 @@ def get_carbon_intensity_predictions(
     zone_name: str = Query("SE", description="Electricity zone name"),
 ):
     base_date = datetime.strptime(request_date, "%Y-%m-%d")
-    
+
     today = datetime.today()
 
     start = base_date - timedelta(days=7)
@@ -61,6 +65,9 @@ def get_carbon_intensity_predictions(
 
     return predictions
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="localhost", port=8000)
+
