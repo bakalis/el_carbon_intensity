@@ -4672,5 +4672,5 @@
        [22.741058789377817 65.71360911443338]]]]},
    :type "Feature",
    :properties
-   {:source "https://simplemaps.com", :id "SE", :name "Sweden"},
+   {:source "https://simplemaps.com", :zoneName "SE" :id "SE", :name "Sweden"},
    :id 1}]})
