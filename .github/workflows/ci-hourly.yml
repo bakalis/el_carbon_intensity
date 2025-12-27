@@ -29,4 +29,4 @@ jobs:
           HOPSWORKS_HOST: ${{ secrets.HOPSWORKS_HOST }}
           ELECTRICITY_MAPS_API_KEY: ${{ secrets.ELECTRICITY_MAPS_API_KEY }}
           ZONES: SE,SE-SE1,SE-SE2,SE-SE3,SE-SE4
-        run: uv run python feature-pipeline.py
+        run: uv run python feature_pipeline.py
