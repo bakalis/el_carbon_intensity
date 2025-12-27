@@ -1,6 +1,6 @@
 (ns components.map
  (:require ["react-leaflet" :refer [MapContainer TileLayer GeoJSON]]
-           [state.state :refer [open-modal!]]))
+           [state.state :refer [app-state open-modal!]]))
 
 (defn geojson-style 
   [layer-index]
@@ -20,9 +20,8 @@
          (.stopPropagation (.-originalEvent e))
          (open-modal! (js->clj feature :keywordize-keys true)))))
 
-(defn map-component [{center :center
-                      zoom :zoom
-                      geojson :geojson}]
+(defn map-component []
+  (let [{:keys [center zoom geojson]} @app-state]
   [:div.map-container
    {:style {:display "flex"
             :align-items "center"
@@ -48,4 +47,4 @@
       [:> GeoJSON
        {:data (clj->js geojson)
         :style (geojson-style idx)
-        :onEachFeature on-each-feature}])]])
+        :onEachFeature on-each-feature}])]]))

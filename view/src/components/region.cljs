@@ -1,7 +1,8 @@
-(ns components.region)
+(ns components.region
+  (:require [state.state :refer [app-state set-region-mode!]]))
 
-(defn regions-selector [{mode :mode
-                         on-change :on-change}]
+(defn regions-selector []
+  (let [{:keys [region-mode]} @app-state]
     [:div.regions-selector
      {:style {:margin "1rem 0"
               :display "flex"
@@ -15,8 +16,8 @@
       [:input
        {:type "radio"
         :name "regions"
-        :checked (= mode :full)
-        :on-change (fn [_](on-change :full))}]
+        :checked (= region-mode :full)
+        :on-change (fn [_](set-region-mode! :full))}]
       " Full Sweden"]
 
      [:label
@@ -24,6 +25,6 @@
       [:input
        {:type "radio"
         :name "regions"
-        :checked (= mode :zones)
-        :on-change (fn [_](on-change :zones))}]
-      " Zones"]])
+        :checked (= region-mode :zones)
+        :on-change (fn [_](set-region-mode! :zones))}]
+      " Zones"]]))
