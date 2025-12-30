@@ -10,7 +10,7 @@ project = hopsworks.login(engine="python")
 
 ci_raw = read_csv_folder(
     Path("data/carbon-intensity"),
-    parse_datetime_cols={"Datetime (UTC)": "datetime"}
+    parse_datetime_cols=["Datetime (UTC)"]
 )
 ci_features = (
     ci_raw

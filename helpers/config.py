@@ -21,6 +21,9 @@ class HopsworksSettings(BaseSettings):
     # For electricity maps API
     ELECTRICITY_MAPS_API_KEY: SecretStr | None = None
 
+    # For Entso-E API
+    TRANSPARENCY_PLATFORM_API_KEY: SecretStr | None = None
+
     # Zones to query
     ZONES: list[str] | None = None
 
@@ -42,6 +45,8 @@ class HopsworksSettings(BaseSettings):
             os.environ["HOPSWORKS_HOST"] = self.HOPSWORKS_HOST
         if os.getenv("ELECTRICITY_MAPS_API_KEY") is None and self.ELECTRICITY_MAPS_API_KEY is not None:
             os.environ["ELECTRICITY_MAPS_API_KEY"] = self.ELECTRICITY_MAPS_API_KEY.get_secret_value()
+        if os.getenv("TRANSPARENCY_PLATFORM_API_KEY") is None and self.TRANSPARENCY_PLATFORM_API_KEY is not None:
+            os.environ["TRANSPARENCY_PLATFORM_API_KEY"] = self.TRANSPARENCY_PLATFORM_API_KEY.get_secret_value()
 
         # --- Check required .env values ---
         missing = []
@@ -50,6 +55,8 @@ class HopsworksSettings(BaseSettings):
             missing.append("HOPSWORKS_API_KEY")
         if not self.ELECTRICITY_MAPS_API_KEY:
             missing.append("ELECTRICITY_MAPS_API_KEY")
+        if not self.TRANSPARENCY_PLATFORM_API_KEY:
+            missing.append("TRANSPARENCY_PLATFORM_API_KEY")
         if not self.ZONES:
             missing.append("ZONES")
 
