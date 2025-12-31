@@ -1,11 +1,13 @@
-from pathlib import Path
+import re
 import polars as pl
+from pathlib import Path
+
 
 def read_csv_folder(
     folder: Path,
     *,
     delimiter: str | None = ",",
-    parse_datetime_cols: list[str] | None = None
+    parse_datetime_cols: list[str] | None = None,
 ) -> pl.DataFrame:
     files = sorted(folder.glob("*.csv"))
     if not files:
@@ -34,9 +36,7 @@ def read_csv_folder(
         missing_cols = [col for col in all_cols if col not in df.columns]
         for col in missing_cols:
             # Add missing column with nulls cast to col_types[col]
-            df = df.with_columns([
-                pl.lit(None, dtype=col_types[col]).alias(col)
-            ])
+            df = df.with_columns([pl.lit(None, dtype=col_types[col]).alias(col)])
         # Reorder columns
         df = df.select(all_cols)
         aligned_dfs.append(df)
@@ -46,8 +46,21 @@ def read_csv_folder(
 
     # Parse datetime columns if specified
     if parse_datetime_cols:
-        df = df.with_columns(
-            [pl.col(c).str.to_datetime() for c in parse_datetime_cols]
-        )
+        df = df.with_columns([pl.col(c).str.to_datetime() for c in parse_datetime_cols])
 
     return df
+
+
+def em_zone_to_entsoe_zone(zone: str) -> str:
+    # CC-CCN → CC_N
+    m = re.fullmatch(r"([A-Z]+)-\1(\d+)", zone)
+    if m:
+        country, suffix = m.groups()
+        return f"{country}_{suffix}"
+
+    # CC → CC
+    m = re.fullmatch(r"([A-Z]+)", zone)
+    if m:
+        return zone
+
+    raise ValueError(f"Unrecognized format: {zone}")
