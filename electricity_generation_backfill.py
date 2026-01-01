@@ -43,7 +43,7 @@ electricity_generation_fg = fs.get_or_create_feature_group(
 electricity_generation_fg.insert(gen_features, wait=True)
 
 electricity_generation_fg.update_feature_description(
-    "datetime", "Date and time of electricity generation data point"
+    "datetime", "Date and time of electricity generation data point (utc)"
 )
 electricity_generation_fg.update_feature_description(
     "zone_id", "Id of the region the data point is valid for"

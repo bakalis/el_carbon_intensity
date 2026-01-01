@@ -55,7 +55,7 @@ carbon_intensity_fg = fs.get_or_create_feature_group(
 carbon_intensity_fg.insert(ci_features, wait=True)
 
 carbon_intensity_fg.update_feature_description(
-    "datetime", "Date and time of carbon intensity data point"
+    "datetime", "Date and time of carbon intensity data point (utc)"
 )
 carbon_intensity_fg.update_feature_description(
     "zone_id", "Id of the region the data point is valid for"

@@ -12,6 +12,9 @@ from helpers.transformations import entsoe_generation_transform
 settings = HopsworksSettings(_env_file="./.env")
 project = hopsworks.login(engine="python")
 fs = project.get_feature_store()
+entsoe_client = EntsoePandasClient(
+    api_key=settings.TRANSPARENCY_PLATFORM_API_KEY.get_secret_value()
+)
 
 def create_emission_df(data):
     # Convert list of ci dict entries to DataFrame
@@ -80,8 +83,26 @@ electricity_generation_fg = fs.get_feature_group(
     name="electricity_generation",
     version=1,
 )
-client = EntsoePandasClient(
-    api_key=settings.TRANSPARENCY_PLATFORM_API_KEY.get_secret_value()
+df = pd.DataFrame()
+for zone in settings.ZONES:
+    entsoe_zone = em_zone_to_entsoe_zone(zone)
+    now = datetime.now(timezone.utc)
+    previous_day = now - timedelta(days=1)
+    start = pd.to_datetime(previous_day, utc=True)
+    end = pd.to_datetime(now, utc=True)
+    zone_data = entsoe_client.query_generation(country_code=entsoe_zone, start=start, end=end)
+    zone_data.index = zone_data.index.tz_convert("UTC").tz_localize(None)
+    zone_data = zone_data.reset_index(names="datetime (utc)")
+    zone_data["Zone id"] = zone
+    zone_data = entsoe_generation_transform(zone_data)
+    df = pd.concat([df, zone_data], ignore_index=True)
+df = df.sort_values(by="datetime")
+electricity_generation_fg.insert(df, wait=True)
+
+# Add new electricity consumption data
+electricity_consumption_fg = fs.get_feature_group(
+    name="electricity_consumption",
+    version=1,
 )
 df = pd.DataFrame()
 for zone in settings.ZONES:
@@ -90,11 +111,11 @@ for zone in settings.ZONES:
     previous_day = now - timedelta(days=1)
     start = pd.to_datetime(previous_day, utc=True)
     end = pd.to_datetime(now, utc=True)
-    zone_data = client.query_generation(country_code=entsoe_zone, start=start, end=end)
+    zone_data = entsoe_client.query_load(country_code=entsoe_zone, start=start, end=end)
     zone_data.index = zone_data.index.tz_convert("UTC").tz_localize(None)
-    zone_data = zone_data.reset_index(names="datetime (utc)")
-    zone_data["Zone id"] = zone
-    zone_data = entsoe_generation_transform(zone_data)
+    zone_data = zone_data.reset_index(names="datetime")
+    zone_data["zone_id"] = zone
+    zone_data = zone_data.rename(columns={"Actual Load": "load"})
     df = pd.concat([df, zone_data], ignore_index=True)
 df = df.sort_values(by="datetime")
-electricity_generation_fg.insert(df, wait=True)
+electricity_consumption_fg.insert(df, wait=True)
