@@ -3,11 +3,14 @@ import requests
 import time
 import pandas as pd
 from datetime import datetime, timezone, timedelta
-from entsoe import EntsoePandasClient
 from helpers.config import HopsworksSettings
 from helpers.utils import em_zone_to_entsoe_zone
 from helpers.transformations import entsoe_generation_transform
 
+from entsoe.mappings import NEIGHBOURS
+# Aggregated zones are missing in the library, so this is added manually
+NEIGHBOURS["SE"] = ["NO", "DK", "DE_LU", "FI", "LT", "PL"]
+from entsoe import EntsoePandasClient
 
 settings = HopsworksSettings(_env_file="./.env")
 project = hopsworks.login(engine="python")
@@ -119,3 +122,25 @@ for zone in settings.ZONES:
     df = pd.concat([df, zone_data], ignore_index=True)
 df = df.sort_values(by="datetime")
 electricity_consumption_fg.insert(df, wait=True)
+
+# Add new electricity flow data
+electricity_flow_fg = fs.get_feature_group(
+    name="electricity_flow",
+    version=1,
+)
+df = pd.DataFrame()
+for zone in settings.ZONES:
+    entsoe_zone = em_zone_to_entsoe_zone(zone)
+    now = datetime.now(timezone.utc)
+    previous_day = now - timedelta(days=1)
+    start = pd.to_datetime(previous_day, utc=True)
+    end = pd.to_datetime(now, utc=True)
+    zone_import = entsoe_client.query_physical_crossborder_allborders(country_code=entsoe_zone, start=start, end=end, export=False, per_hour=True)["sum"]
+    zone_export = entsoe_client.query_physical_crossborder_allborders(country_code=entsoe_zone, start=start, end=end, export=True, per_hour=True)["sum"]
+    zone_data = pd.concat([zone_import, zone_export], axis=1, keys=["import", "export"])
+    zone_data.index = zone_data.index.tz_convert("UTC").tz_localize(None)
+    zone_data = zone_data.reset_index(names="datetime")
+    zone_data["zone_id"] = zone
+    df = pd.concat([df, zone_data], ignore_index=True)
+df = df.sort_values(by="datetime")
+electricity_flow_fg.insert(df, wait=True)
