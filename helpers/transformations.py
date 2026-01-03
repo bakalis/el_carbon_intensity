@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -62,3 +63,41 @@ def entsoe_generation_transform(df: pd.DataFrame) -> pd.DataFrame:
     out["total"] = out[list(GENERATION_MAPPING.keys())].sum(axis=1)
 
     return out
+
+
+def model_dependent_transform(X: pd.DataFrame, selected_features: list[str]) -> pd.DataFrame:
+    df = X[selected_features].copy()
+
+    # Define column groups
+    generation_cols = [
+        c for c in df.columns
+        if c not in {"datetime", "total", "import", "load", "export"}
+    ]
+
+    # Compute totals
+    df["available_total"] = df["total"] + df["import"]
+    df["used_total"] = df["load"] + df["export"]
+
+    # Avoid division by zero
+    available_total = df["available_total"].replace(0, np.nan)
+    used_total = df["used_total"].replace(0, np.nan)
+
+    # Normalize generation sources
+    for col in generation_cols:
+        df[f"{col}_portion"] = df[col] / available_total
+
+    # Normalize import
+    df["import_portion"] = df["import"] / available_total
+
+    # Normalize load & export
+    df["load_portion"] = df["load"] / used_total
+    df["export_portion"] = df["export"] / used_total
+
+    # Final column selection
+    output_cols = (
+        ["datetime"]
+        + [f"{c}_portion" for c in generation_cols]
+        + ["import_portion", "available_total", "load_portion", "export_portion", "used_total"]
+    )
+
+    return df[output_cols]
