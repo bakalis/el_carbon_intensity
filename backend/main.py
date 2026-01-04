@@ -2,6 +2,8 @@ import random
 from datetime import datetime, timedelta
 from typing import List
 import asyncio
+import os
+import logging
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,14 +18,27 @@ models = None
 models_ready = False
 settings = None
 project = None
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def load_models_sync():
-    global models, settings, project, models_ready
-    settings = HopsworksSettings(_env_file="./.env")
-    project = hopsworks.login(engine="python")
-    models = load_models(project) 
-    print(f"Loaded models: {models.keys()}")
-    models_ready = True
+    global models, project, models_ready
+    try:
+        logger.info("load_models_sync: starting")
+
+        project = hopsworks.login(
+            host=os.environ["HOPSWORKS_HOST"],
+            project=os.environ["HOPSWORKS_PROJECT"],
+            api_key_value=os.environ["HOPSWORKS_API_KEY"],
+        )
+        logger.info("load_models_sync: logged into Hopsworks")
+
+        models = load_models(project)
+        logger.info(f"load_models_sync: loaded models {list(models.keys())}")
+        models_ready = True
+    except Exception:
+        logger.exception("load_models_sync: FAILED")
+        models_ready = False
 
 async def load_models_bg():
     loop = asyncio.get_running_loop()
