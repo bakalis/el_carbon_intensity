@@ -105,6 +105,8 @@ def get_carbon_intensity_predictions(
 
 @app.post("/predict", response_model=CarbonIntensityResponse)
 def predict_carbon_intensity(req: CarbonIntensityRequest):
+    global models, models_ready
+    
     if not models_ready:
         raise HTTPException(status_code=503, detail="Models still loading")
 
