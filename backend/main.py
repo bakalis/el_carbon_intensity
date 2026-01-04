@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta
 from typing import List
+import asyncio
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,22 +13,30 @@ import hopsworks
 from helpers.config import HopsworksSettings
 
 models = None
+models_ready = False
 settings = None
 project = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global models
-    global settings
-    global project
+def load_models_sync():
+    global models, settings, project, models_ready
     settings = HopsworksSettings(_env_file="./.env")
     project = hopsworks.login(engine="python")
-    models = load_models(project)
+    models = load_models(project) 
     print(f"Loaded models: {models.keys()}")
+    models_ready = True
+
+async def load_models_bg():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, load_models_sync)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(load_models_bg())
     yield
     print("Shutting down application")
 
 app = FastAPI(lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -46,8 +55,12 @@ def read_root():
     return {"message": "Welcome to the Carbon Intensity Prediction API"}
 
 @app.get("/kaithheathcheck")
-async def kaith_healthcheck():
+async def health():
     return {"status": "ok"}
+
+@app.get("/readiness")
+async def readiness():
+    return {"ready": models_ready}
 
 @app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
 def get_carbon_intensity_predictions(
@@ -92,6 +105,9 @@ def get_carbon_intensity_predictions(
 
 @app.post("/predict", response_model=CarbonIntensityResponse)
 def predict_carbon_intensity(req: CarbonIntensityRequest):
+    if not models_ready:
+        raise HTTPException(status_code=503, detail="Models still loading")
+
     zone_id = req.zone_id
     output_type = req.output_type if req.output_type else 'ci_lifecycle'
     model = models.get((zone_id, output_type))
