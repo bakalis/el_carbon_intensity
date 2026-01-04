@@ -1,3 +1,7 @@
 fastapi
 pydantic
 uvicorn
+hopsworks[great-expectations,polars,python]>=4.6.0
+xgboost>=3.1.2
+pandas
+numpy
