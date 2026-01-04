@@ -1,4 +1,4 @@
-hopsworks==4.6.0
+hopsworks[great-expectations,polars,python]==4.6.0
 fastapi
 pydantic
 pydantic-settings>=2.12.0

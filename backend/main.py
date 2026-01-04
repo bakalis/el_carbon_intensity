@@ -12,8 +12,10 @@ from .model import CarbonIntensityPrediction, \
     load_models, to_model_input, \
     CarbonIntensityRequest, CarbonIntensityResponse
 import hopsworks
+from dotenv import load_dotenv
 from helpers.config import HopsworksSettings
 
+load_dotenv()
 models = None
 models_ready = False
 settings = None
@@ -30,6 +32,7 @@ def load_models_sync():
             host=os.environ["HOPSWORKS_HOST"],
             project=os.environ["HOPSWORKS_PROJECT"],
             api_key_value=os.environ["HOPSWORKS_API_KEY"],
+            engine="python"
         )
         logger.info("load_models_sync: logged into Hopsworks")
 
