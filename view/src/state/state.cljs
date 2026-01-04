@@ -18,7 +18,8 @@
                                     :feature nil
                                     :carbon-data nil
                                     :loading false
-                                    :error nil}}))
+                                    :error nil
+                                    :active-tab :hindcast}}))
 
 ;; API configuration
 (def api-base-url "https://elcarbonintensity-bakalis1334-ft6sl0da.leapcell.dev")
@@ -54,6 +55,9 @@
                          (-> s
                              (assoc-in [:modal :error] (.-message error))
                              (assoc-in [:modal :loading] false))))))))
+
+(defn set-active-tab! [tab]
+  (swap! app-state assoc-in [:modal :active-tab] tab))
 
 ;; Open modal and fetch data for the feature
 (defn open-modal! [feature]
