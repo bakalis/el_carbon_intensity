@@ -32,7 +32,7 @@ def load_models_sync():
             host=os.environ["HOPSWORKS_HOST"],
             project=os.environ["HOPSWORKS_PROJECT"],
             api_key_value=os.environ["HOPSWORKS_API_KEY"],
-            engine="python"
+            engine=None
         )
         logger.info("load_models_sync: logged into Hopsworks")
 
