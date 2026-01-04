@@ -45,6 +45,10 @@ def read_root():
     print(f"Using model: {model}")
     return {"message": "Welcome to the Carbon Intensity Prediction API"}
 
+@app.get("/kaithheathcheck")
+async def kaith_healthcheck():
+    return {"status": "ok"}
+
 @app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
 def get_carbon_intensity_predictions(
     request_date: str = Query(..., description="Reference date in YYYY-MM-DD format"),
