@@ -23,24 +23,39 @@ project = None
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def _login_blocking():
+    return hopsworks.login(
+        host=os.getenv("HOPSWORKS_HOST"),
+        project=os.getenv("HOPSWORKS_PROJECT"),
+        api_key_value=os.getenv("HOPSWORKS_API_KEY"),
+    )
+
+async def try_login_with_timeout(seconds: float = 5.0):
+    loop = asyncio.get_running_loop()
+    logger.info("Hopsworks login: starting (with timeout)")
+    try:
+        project = await asyncio.wait_for(
+            loop.run_in_executor(None, _login_blocking),
+            timeout=seconds,
+        )
+        logger.info("Hopsworks login: success")
+        return project
+    except asyncio.TimeoutError:
+        logger.error(f"Hopsworks login: timed out after {seconds}s")
+        return None
+
 def load_models_sync():
     global models, project, models_ready
     try:
-        logger.info("load_models_sync: starting")
-
-        project = hopsworks.login(
-            host=os.environ["HOPSWORKS_HOST"],
-            project=os.environ["HOPSWORKS_PROJECT"],
-            api_key_value=os.environ["HOPSWORKS_API_KEY"],
-            engine="python"
-        )
-        logger.info("load_models_sync: logged into Hopsworks")
-
+        # run sync wrapper of the async timeout
+        project = asyncio.run(try_login_with_timeout(5.0))
+        if project is None:
+            models_ready = False
+            return
         models = load_models(project)
-        logger.info(f"load_models_sync: loaded models {list(models.keys())}")
         models_ready = True
     except Exception:
-        logger.exception("load_models_sync: FAILED")
+        logging.exception("load_models_sync failed")
         models_ready = False
 
 async def load_models_bg():
