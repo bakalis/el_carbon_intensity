@@ -2,11 +2,32 @@ import random
 from datetime import datetime, timedelta
 from typing import List
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from model import CarbonIntensityPrediction
+from contextlib import asynccontextmanager
+from .model import CarbonIntensityPrediction, \
+    load_models, to_model_input, \
+    CarbonIntensityRequest, CarbonIntensityResponse
+import hopsworks
+from helpers.config import HopsworksSettings
 
-app = FastAPI()
+models = None
+settings = None
+project = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global models
+    global settings
+    global project
+    settings = HopsworksSettings(_env_file="./.env")
+    project = hopsworks.login(engine="python")
+    models = load_models(project)
+    print(f"Loaded models: {models.keys()}")
+    yield
+    print("Shutting down application")
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -18,11 +39,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
-
+    model = models[('SE', 'ci_lifecycle')]
+    print(f"Using model: {model}")
+    return {"message": "Welcome to the Carbon Intensity Prediction API"}
 
 @app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
 def get_carbon_intensity_predictions(
@@ -65,9 +86,23 @@ def get_carbon_intensity_predictions(
 
     return predictions
 
+@app.post("/predict", response_model=CarbonIntensityResponse)
+def predict_carbon_intensity(req: CarbonIntensityRequest):
+    zone_id = req.zone_id
+    output_type = req.output_type if req.output_type else 'ci_lifecycle'
+    model = models.get((zone_id, output_type))
+    if model is None:
+        raise HTTPException(status_code=500, detail="Could not find model for the specified zone and output type")
+
+    X = to_model_input(zone_id, req)
+
+    prediction = model.predict(X)
+
+    return CarbonIntensityResponse(
+        carbon_intensity=float(prediction[0])
+    )
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="localhost", port=8000)
-
