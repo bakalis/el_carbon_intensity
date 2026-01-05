@@ -1,27 +1,7 @@
 (ns components.playground-tab
   (:require [reagent.core :as r]
-   [state.state :refer [app-state]]
+   [state.state :refer [app-state predict-carbon-intensity]]
    [components.common :refer [energy-slider]]))
-
-(defn predict-carbon-intensity [form-data]
-  (-> (js/fetch "http://localhost:8000/predict"
-                (clj->js
-                 {:method "POST"
-                  :headers {"Content-Type" "application/json"}
-                  :body (js/JSON.stringify (clj->js form-data))}))
-      (.then (fn [response]
-               (if (.-ok response)
-                 (.json response)
-                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
-      (.then (fn [data]
-               (js->clj data :keywordize-keys true)))
-      (.catch (fn [err]
-                (js/console.error "Prediction error:" err)
-                {:error (.-message err)}))))
-
-;; -----------------------------------------------------------------------------
-;; Playground
-;; -----------------------------------------------------------------------------
 
 (defn playground-content []
   (let [feature     (:feature (:modal @app-state))
@@ -31,7 +11,7 @@
         form-state
         (r/atom
          (or sample-data
-             {:datetime (-> (js/Date.) .toISOString (.slice 0 16))
+             {:date_time (-> (js/Date.) .toISOString (.slice 0 16))
               :zone_id (get-in feature [:properties :zoneName])
 
               :coal 0.0
@@ -51,7 +31,7 @@
 
               :total 0.0
               :load 0.0
-              :import 0.0
+              :import_ 0.0
               :export 0.0}))
 
         prediction-result (r/atom nil)
@@ -72,7 +52,7 @@
              (.preventDefault e)
              (reset! loading? true)
              (-> (predict-carbon-intensity @form-state)
-                 (.then #(reset! prediction-result %))
+                 (.then #(reset! prediction-result (:carbon_intensity %)))
                  (.finally #(reset! loading? false))))}
           [:h5.section-title "🏭 Fossil Fuels"]
 
@@ -168,7 +148,7 @@
 
           [:div.slider-grid 
           [energy-slider
-           {:label "Import" :icon "📥" :key :import
+           {:label "Import" :icon "📥" :key :import_
             :min 0 :max 10000 :step 100 :unit "MW"}
            form-state sample-data]
 
@@ -202,7 +182,7 @@
            :else
            [:div.prediction-display
             [:h2
-             (str (.toFixed (:predicted_intensity @prediction-result) 1)
+             (str (.toFixed @prediction-result 1)
                   " gCO₂ / kWh")]
 
             (when-let [c (:confidence @prediction-result)]

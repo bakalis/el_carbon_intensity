@@ -8,7 +8,7 @@
 (defn get-available-dates [data]
   (when data
     (->> data
-         (map :datetime)
+         (map :date_time)
          (map #(.slice % 0 10))
          distinct
          sort
@@ -17,7 +17,7 @@
 ;; Filter data for a specific date
 (defn filter-data-by-date [data date]
   (when data
-    (filter #(= (.slice (:datetime %) 0 10) date) data)))
+    (filter #(= (.slice (:date_time %) 0 10) date) data)))
 
 ;; Date selector component
 (defn date-selector []

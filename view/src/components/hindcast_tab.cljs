@@ -5,8 +5,8 @@
   (when (and data (seq data))
     (let [hindcast-data (filter :actual_intensity data)
           chart-data (mapv (fn [entry]
-                            {:time (-> (:datetime entry) (.slice 11 16))
-                             :datetime (:datetime entry)
+                            {:time (-> (:date_time entry) (.slice 11 16))
+                             :date_time (:date_time entry)
                              :predicted (:predicted_intensity entry)
                              :actual (:actual_intensity entry)})
                           hindcast-data)

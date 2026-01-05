@@ -25,6 +25,24 @@
 (def api-base-url "https://bakalis-el-carbon-intensity-backend.hf.space")
 ; (def api-base-url "http://localhost:8000")
 
+(defn predict-carbon-intensity [form-data]
+  (let [payload (clj->js form-data)]
+    (js/console.log "JS payload:" payload)
+    (-> (js/fetch (str api-base-url "/predict")
+                  (clj->js {:method "POST"
+                            :headers {"Content-Type" "application/json"}
+                            :body (js/JSON.stringify payload)}))
+        (.then (fn [response]
+                 (if (.-ok response)
+                   (.json response)
+                   (throw (js/Error. (str "HTTP error: " (.-status response)))))))
+        (.then (fn [data]
+                 (js/console.log data)
+                 (js->clj data :keywordize-keys true)))
+        (.catch (fn [err]
+                  (js/console.error "Prediction error:" err)
+                  {:error (.-message err)})))))
+
 ;; Fetch carbon intensity data for a zone
 (defn fetch-carbon-intensity! [zone-name request-date]
   (swap! app-state
@@ -35,7 +53,7 @@
 
   (-> (js/fetch (str api-base-url "/carbon-intensity"
                      "?request_date=" request-date
-                     "&zone_name=" zone-name))
+                     "&zone_id=" zone-name))
       (.then (fn [response]
                (if (.-ok response)
                  (.json response)
