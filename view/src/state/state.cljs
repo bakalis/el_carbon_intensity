@@ -34,7 +34,7 @@
                (assoc-in [:modal :error] nil))))
 
   (-> (js/fetch (str api-base-url "/carbon-intensity"
-                     "/?request_date=" request-date
+                     "?request_date=" request-date
                      "&zone_name=" zone-name))
       (.then (fn [response]
                (if (.-ok response)
