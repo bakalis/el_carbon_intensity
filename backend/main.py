@@ -4,6 +4,7 @@ from typing import List
 import asyncio
 import os
 import logging
+import httpx
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,6 @@ from .model import CarbonIntensityPrediction, \
     CarbonIntensityRequest, CarbonIntensityResponse
 import hopsworks
 from dotenv import load_dotenv
-from helpers.config import HopsworksSettings
 
 load_dotenv()
 models = None
@@ -62,6 +62,14 @@ async def load_models_bg():
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, load_models_sync)
 
+async def check_hopsworks_connectivity():
+    url = f"https://{os.getenv('HOPSWORKS_HOST')}/api/v2/projects"
+    headers = {"x-api-key": os.getenv("HOPSWORKS_API_KEY")}
+
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        r = await client.get(url, headers=headers)
+        return r.status_code, r.text[:200]
+    
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     asyncio.create_task(load_models_bg())
@@ -87,13 +95,22 @@ def read_root():
     print(f"Using model: {model}")
     return {"message": "Welcome to the Carbon Intensity Prediction API"}
 
-@app.get("/kaithheathcheck")
+@app.get("/kaithhealthcheck")
 async def health():
+    return {"status": "ok"}
+
+@app.get("/kaithheathcheck")
+async def heath():
     return {"status": "ok"}
 
 @app.get("/readiness")
 async def readiness():
     return {"ready": models_ready}
+
+@app.get("/debug/hopsworks")
+async def debug_hopsworks():
+    code, body = await check_hopsworks_connectivity()
+    return {"status_code": code, "body_snippet": body}
 
 @app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
 def get_carbon_intensity_predictions(
