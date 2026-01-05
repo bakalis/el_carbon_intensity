@@ -14,6 +14,7 @@
                                       SE-2/data 
                                       SE-3/data 
                                       SE-4/data]
+                            :raw-features nil
                             :modal {:open false
                                     :feature nil
                                     :carbon-data nil
@@ -21,13 +22,25 @@
                                     :error nil
                                     :active-tab :hindcast}}))
 
+
 ;; API configuration
 (def api-base-url "https://bakalis-el-carbon-intensity-backend.hf.space")
 ; (def api-base-url "http://localhost:8000")
 
+(defn fetch-raw-features! []
+  (-> (js/fetch (str api-base-url "/raw-features"))
+      (.then (fn [response]
+               (if (.-ok response)
+                 ;; parse JSON first, then assoc into the atom
+                 (.then (.json response)
+                        (fn [data]
+                          (swap! app-state assoc :raw-features (js->clj data))))
+                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
+      (.catch (fn [err]
+                (js/console.error "Error fetching raw features:" err)))))
+
 (defn predict-carbon-intensity [form-data]
   (let [payload (clj->js form-data)]
-    (js/console.log "JS payload:" payload)
     (-> (js/fetch (str api-base-url "/predict")
                   (clj->js {:method "POST"
                             :headers {"Content-Type" "application/json"}
@@ -37,7 +50,6 @@
                    (.json response)
                    (throw (js/Error. (str "HTTP error: " (.-status response)))))))
         (.then (fn [data]
-                 (js/console.log data)
                  (js->clj data :keywordize-keys true)))
         (.catch (fn [err]
                   (js/console.error "Prediction error:" err)
@@ -82,10 +94,10 @@
   (let [zone-name (get-in feature [:properties :zoneName])
         today (-> (js/Date.) .toISOString (.slice 0 10))] ; Format: YYYY-MM-DD
     (swap! app-state assoc :modal {:open true 
-                                    :feature feature
-                                    :carbon-data nil
-                                    :loading false
-                                    :error nil})
+                                   :feature feature
+                                   :carbon-data nil
+                                   :loading false
+                                   :error nil})
     ;; Fetch carbon intensity data when modal opens
     (when zone-name
       (fetch-carbon-intensity! zone-name today))))
