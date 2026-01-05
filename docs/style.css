@@ -31,6 +31,24 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.modal-body {
+  padding: 30px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body h3 {
+  margin-top: 0;
+  font-size: 1.8em;
+}
+
+.modal-body h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #667eea;
+  font-size: 1.2em;
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(50px);
@@ -75,25 +93,6 @@
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-.modal-body {
-  padding: 30px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.modal-body h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.8em;
-}
-
-.modal-body h4 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  color: #667eea;
-  font-size: 1.2em;
 }
 
 .properties table {
@@ -542,11 +541,9 @@
 
 .playground-tab h3 {
   margin-top: 0;
-  color: #333;
 }
 
 .playground-description {
-  color: #666;
   margin-bottom: 30px;
   font-size: 1.05em;
 }
@@ -1161,4 +1158,66 @@
 
 .form-section::-webkit-scrollbar-thumb:hover {
   background: #5568d3;
+}
+
+.slider-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.slider-row > .form-group {
+  flex: 1;
+}
+
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.energy-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: stretch; /* default: full width */
+}
+
+.energy-slider:focus-within {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  padding: 0.4rem;
+}
+
+.slider-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.slider-icon {
+  font-size: 1rem;
+}
+
+.slider-input {
+  width: 70%;
+}
+
+.slider-value {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: right;
+}
+
+.slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* keep unit aligned with slider start */
+  gap: 0.2rem;              /* small gap between slider and unit */
+}
+
+.slider-unit {
+  font-size: 0.75rem;
+  color: #555;
 }

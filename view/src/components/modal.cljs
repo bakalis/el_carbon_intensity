@@ -41,7 +41,7 @@
       [:div.modal-overlay {:on-click close-modal!}
        [:div.modal-content {:on-click #(.stopPropagation %)}
         [:div.modal-header
-         [:h2 "Region Details"]
+         [:h2 (get-in feature [:properties :zoneName] "Unnamed Region")]
          [:button.close-btn {:on-click close-modal!} "×"]]
         
         ;; Tab buttons
@@ -53,13 +53,11 @@
          [:button.tab-button 
           {:class (when (= active-tab :playground) "active")
            :on-click #(set-active-tab! :playground)}
-          "🧪 Playground"]]
+          "⚡ Playground"]]
         
         [:div.modal-body
          (when feature
            [:div
-            [:h3 (get-in feature [:properties :zoneName] "Unnamed Region")]
-            
             ;; Show date selector only on hindcast tab
             (when (= active-tab :hindcast)
               [date-selector])
@@ -77,8 +75,8 @@
             
             ;; Tab content
             (when (and carbon-data (not loading))
-              (if (= active-tab :hindcast)
-                [hindcast-chart carbon-data]
-                [playground-content]))])]
+              (if (= active-tab :playground)
+                [playground-content]
+                [hindcast-chart carbon-data]))])]
         [:div.modal-footer
          [:button.btn-primary {:on-click close-modal!} "Close"]]]])))
