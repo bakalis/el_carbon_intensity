@@ -42,8 +42,7 @@
            [:> LineChart {:data (clj->js chart-data)
                          :margin {:top 5 :right 30 :left 20 :bottom 5}}
             [:> CartesianGrid {:strokeDasharray "3 3"}]
-            [:> XAxis {:dataKey "time"
-                      :label {:value "Time" :position "insideBottom" :offset -5}}]
+            [:> XAxis {:dataKey "time"}]
             [:> YAxis {:label {:value "Intensity (gCO₂/kWh)" :angle -90 :position "insideLeft"}}]
             [:> Tooltip {:contentStyle {:background "#fff" :border "1px solid #ccc"}}]
             [:> Legend]

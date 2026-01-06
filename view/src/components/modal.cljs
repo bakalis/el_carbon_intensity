@@ -41,7 +41,7 @@
       [:div.modal-overlay {:on-click close-modal!}
        [:div.modal-content {:on-click #(.stopPropagation %)}
         [:div.modal-header
-         [:h2 (get-in feature [:properties :zoneName] "Unnamed Region")]
+         [:h2 (str (get-in feature [:properties :zoneName] "Unnamed Region") " - " (:selected-date @app-state))]
          [:button.close-btn {:on-click close-modal!} "×"]]
         
         ;; Tab buttons

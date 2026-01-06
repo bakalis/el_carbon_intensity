@@ -1,5 +1,6 @@
 (ns state.state
   (:require [reagent.core :as r]
+            [clojure.string :as str]
             [data.SE :as SE]
             [data.SE-1 :as SE-1]
             [data.SE-2 :as SE-2]
@@ -50,7 +51,14 @@
                (if (.-ok response)
                  (.then (.json response)
                         (fn [data]
-                          (swap! app-state assoc :carbon-intensities (js->clj data))))
+                          (let [clj-data (js->clj data)
+                                keywordized-data (js->clj data :keywordize-keys true)
+                                first-date (-> keywordized-data vals first :date_time (str/split #"T") first)]
+                            ;; single swap! updating both keys
+                            (swap! app-state
+                                   #(assoc % 
+                                           :carbon-intensities clj-data
+                                           :selected-date first-date)))))
                  (throw (js/Error. (str "HTTP error: " (.-status response)))))))
       (.catch (fn [err]
                 (js/console.error "Error fetching carbon intensities:" err)))))
