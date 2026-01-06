@@ -14,7 +14,9 @@
                                       SE-2/data 
                                       SE-3/data 
                                       SE-4/data]
+                            :loading? true
                             :raw-features nil
+                            :carbon-intensities nil
                             :modal {:open false
                                     :feature nil
                                     :carbon-data nil
@@ -38,6 +40,17 @@
                  (throw (js/Error. (str "HTTP error: " (.-status response)))))))
       (.catch (fn [err]
                 (js/console.error "Error fetching raw features:" err)))))
+
+(defn fetch-all-carbon-intensities! []
+  (-> (js/fetch (str api-base-url "/all-carbon-intensities"))
+      (.then (fn [response]
+               (if (.-ok response)
+                 (.then (.json response)
+                        (fn [data]
+                          (swap! app-state assoc :carbon-intensities (js->clj data))))
+                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
+      (.catch (fn [err]
+                (js/console.error "Error fetching carbon intensities:" err)))))
 
 (defn predict-carbon-intensity [form-data]
   (let [payload (clj->js form-data)]
@@ -97,7 +110,8 @@
                                    :feature feature
                                    :carbon-data nil
                                    :loading false
-                                   :error nil})
+                                   :error nil
+                                   :active-tab :hindcast})
     ;; Fetch carbon intensity data when modal opens
     (when zone-name
       (fetch-carbon-intensity! zone-name today))))
