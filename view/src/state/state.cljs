@@ -14,6 +14,9 @@
                                       SE-2/data 
                                       SE-3/data 
                                       SE-4/data]
+                            :sidebar-open? false
+                            :selected-date nil
+                            :selected-hour nil
                             :loading? true
                             :raw-features nil
                             :carbon-intensities nil

@@ -58,11 +58,6 @@
         [:div.modal-body
          (when feature
            [:div
-            ;; Show date selector only on hindcast tab
-            (when (= active-tab :hindcast)
-              [date-selector])
-            
-            ;; Loading state
             (when loading
               [:div.loading-data
                [:div.spinner-small]
