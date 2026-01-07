@@ -43,7 +43,6 @@
           ci (get-in intensities-by-datetime
                      [region-id selected-hour "actual_intensity"])
           fill-color    (intensity->color ci)]
-      (js/console.log (pr-str intensities-by-datetime))
       (clj->js
         {:fillColor   fill-color
          :weight      2

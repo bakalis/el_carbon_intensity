@@ -62,6 +62,24 @@
       (.catch (fn [err]
                 (js/console.error "Error fetching carbon intensities:" err)))))
 
+(defn fetch-day-all-carbon-intensities! [request-date]
+  (-> (js/fetch (str api-base-url "/day-all-carbon-intensities"
+                     "?request_date=" request-date))
+      (.then (fn [response]
+               (if (.-ok response)
+                 (.then (.json response)
+                        (fn [data]
+                          (let [clj-data (js->clj data)
+                                keywordized-data (js->clj data :keywordize-keys true)
+                                first-date (-> keywordized-data vals first first :date_time (str/split #"T") first)]
+                            (swap! app-state
+                                   #(assoc % 
+                                           :carbon-intensities clj-data
+                                           :selected-date first-date)))))
+                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
+      (.catch (fn [err]
+                (js/console.error "Error fetching carbon intensities:" err)))))
+
 (defn predict-carbon-intensity [form-data]
   (let [payload (clj->js form-data)]
     (-> (js/fetch (str api-base-url "/predict")

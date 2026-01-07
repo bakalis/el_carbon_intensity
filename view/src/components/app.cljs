@@ -6,10 +6,8 @@
 
 ;; Main app
 (defn app []
-  (r/with-let [_ (do (swap! app-state (fn [old-state] (assoc old-state :loading? true)))
-                     (fetch-raw-features!)
-                     (fetch-all-carbon-intensities!)
-                     (swap! app-state (fn [old-state] (assoc old-state :loading? false))))]
+  (r/with-let [_ (do (fetch-raw-features!)
+                     (fetch-all-carbon-intensities!))]
     [:div.min-h-screen.bg-gradient-to-br.from-slate-50.to-slate-100
      ;; Top Navigation Bar
      [:nav.bg-white.shadow-sm.border-b.border-slate-200
