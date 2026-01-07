@@ -17,7 +17,7 @@
                                       SE-4/data]
                             :sidebar-open? false
                             :selected-date nil
-                            :selected-hour nil
+                            :selected-hour 12
                             :loading? true
                             :raw-features nil
                             :carbon-intensities nil
@@ -53,8 +53,7 @@
                         (fn [data]
                           (let [clj-data (js->clj data)
                                 keywordized-data (js->clj data :keywordize-keys true)
-                                first-date (-> keywordized-data vals first :date_time (str/split #"T") first)]
-                            ;; single swap! updating both keys
+                                first-date (-> keywordized-data vals first first :date_time (str/split #"T") first)]
                             (swap! app-state
                                    #(assoc % 
                                            :carbon-intensities clj-data
