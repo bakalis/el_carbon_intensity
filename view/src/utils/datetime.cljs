@@ -18,3 +18,13 @@
   (let [d (js/Date.)]
     (.setDate d (- (.getDate d) 7))
     (date->ymd d)))
+
+(defn hour-from-iso-int [dt]
+  (js/parseInt (subs dt 11 13)))
+
+(defn index-intensities-by-hour [intensities]
+  (into {}
+        (for [[zone entries] intensities]
+          [zone
+           (into {}
+                 (map (fn [e] [(hour-from-iso-int (get e "date_time")) e]) entries))])))
