@@ -3,22 +3,26 @@
             [components.region :refer [regions-selector]]
             [components.datetime-selector :refer [datetime-selector]]
             [components.map :refer [map-component]]))
-
 (defn collapsible-sidebar []
   (let [{:keys [sidebar-open? selected-date selected-hour]} @app-state
-        format-hour (fn [hour] (str (when (< hour 10) "0") hour ":00"))
-        prev-hour! #(swap! app-state update :selected-hour 
-                           (fn [h] (if (> h 0) (dec h) 23)))
-        next-hour! #(swap! app-state update :selected-hour 
-                           (fn [h] (if (< h 23) (inc h) 0)))
         toggle-sidebar! #(swap! app-state update :sidebar-open? not)]
-
-    [:div.flex.h-full
+    [:div.flex.h-full.relative
+     ;; Backdrop overlay for mobile
+     (when sidebar-open?
+       [:div.fixed.inset-0.bg-black.bg-opacity-50.z-40.lg:hidden
+        {:on-click toggle-sidebar!}])
+     
      ;; Sidebar
-     [:div.bg-white.border-r.border-slate-200.shadow-lg.transition-all.duration-300.ease-in-out.flex.flex-col
-      {:class (if sidebar-open? "w-80" "w-0")
-       :style {:overflow "hidden"}}
-
+     [:div.bg-white.shadow-lg.transition-all.duration-300.ease-in-out.flex.flex-col.z-50
+      {:class [(if sidebar-open? "translate-x-0" "translate-x-[-100%]")
+               ;; Mobile: fixed overlay, Desktop: static sidebar
+               "fixed lg:relative"
+               "inset-y-0 left-0"
+               "w-80 lg:w-80"
+               "lg:border-r lg:border-slate-200"
+               (when-not sidebar-open? "lg:w-0")]
+       :style {:overflow (if sidebar-open? "visible" "hidden")}}
+      
       ;; Header
       [:div.p-4.border-b.border-slate-200.flex.items-center.justify-between.bg-gradient-to-r.from-indigo-50.to-white
        [:div.flex.items-center.space-x-2
@@ -31,21 +35,26 @@
         {:on-click toggle-sidebar!}
         [:svg.w-5.h-5 {:fill "none" :stroke "currentColor" :viewBox "0 0 24 24"}
          [:path {:stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M6 18L18 6M6 6l12 12"}]]]]
-
+      
       ;; Content
       [:div.flex-1.overflow-y-auto.p-4.space-y-6
        ;; Region Selection
        (regions-selector)
-
        ;; Date Selection
-      (datetime-selector)]]
-
-     ;; Toggle Button (when closed)
+       (datetime-selector)]]
+     
+     ;; Toggle Button (when closed) - Mobile floating, Desktop edge button
      (when-not sidebar-open?
-       [:button.absolute.left-0.top-20.bg-white.border.border-slate-200.rounded-r-lg.shadow-lg.p-2.hover:bg-indigo-50.transition-colors.z-10
-        {:on-click toggle-sidebar!}
-        [:svg.w-5.h-5.text-slate-600 {:fill "none" :stroke "currentColor" :viewBox "0 0 24 24"} [:path {:stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M4 6h16M4 12h16M4 18h16"}]]])
-
+       [:button.bg-white.border.border-slate-200.shadow-lg.hover:bg-indigo-50.transition-colors.z-30
+        {:class ["fixed lg:absolute"
+                 "top-4 left-4 lg:left-0 lg:top-20"
+                 "rounded-full lg:rounded-r-lg lg:rounded-l-none"
+                 "p-3 lg:p-2"]
+         :on-click toggle-sidebar!}
+        [:svg.w-5.h-5.text-slate-600 {:fill "none" :stroke "currentColor" :viewBox "0 0 24 24"}
+         [:path {:stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M4 6h16M4 12h16M4 18h16"}]]])
+     
      ;; Map Area
-     [:div.flex-1.relative
+     [:div.flex-1.w-full
+      {:class (when sidebar-open? "hidden lg:block")} ; Hide map on mobile when sidebar open
       (map-component)]]))
