@@ -42,17 +42,16 @@ feature_view = fs.get_or_create_feature_view(
     description="Energy data from entso-e with Carbon Intensity as target",
     version=1,
     labels=["ci_direct", "ci_lifecycle"],
-    query=carbon_intensity_fg \
-        .select(["datetime", "zone_id", "ci_direct", "ci_lifecycle"]) \
-        .join(electricity_generation_fg.select_features(), on=["zone_id"]) \
-        .join(electricity_consumption_fg.select_features(), on=["zone_id"]) \
-        .join(electricity_flow_fg.select_features(), on=["zone_id"]),
+    query=carbon_intensity_fg.select(
+        ["datetime", "zone_id", "ci_direct", "ci_lifecycle"]
+    )
+    .join(electricity_generation_fg.select_features(), on=["zone_id"])
+    .join(electricity_consumption_fg.select_features(), on=["zone_id"])
+    .join(electricity_flow_fg.select_features(), on=["zone_id"]),
 )
 
 test_start = datetime.strptime("2025-05-01", "%Y-%m-%d")
-X_train, X_test, y_train, y_test = feature_view.train_test_split(
-    test_start=test_start
-)
+X_train, X_test, y_train, y_test = feature_view.train_test_split(test_start=test_start)
 
 zones = X_train["zone_id"].unique()
 
@@ -99,7 +98,7 @@ for zone in zones:
             "selected_features": selected_features,
             "n_features": len(selected_features),
         }
-        
+
         # Save and upload model
         model_path = model_dir / f"{zone}_{target}_model"
         model_path.mkdir(parents=True, exist_ok=True)
@@ -108,7 +107,7 @@ for zone in zones:
             json.dump(metadata, f)
 
         hopsworks_model = mr.python.create_model(
-            name=f"{target}_xgboost_{zone.replace('-', '_')}_model", 
+            name=f"{target}_xgboost_{zone.replace('-', '_')}_model",
             version=1,
             metrics=metrics,
             feature_view=feature_view,
@@ -119,10 +118,22 @@ for zone in zones:
         # Plot hindcast (testing data)
         plt.figure(figsize=(14, 6))
 
-        plt.plot(dt_train[:1000], yz_train[:1000], label="Actual (Train)", color="blue", alpha=0.6)
-        plt.plot(dt_train[:1000], y_pred_train[:1000], label="Predicted (Train)", color="orange", linestyle="--")
+        plt.plot(
+            dt_train[:1000],
+            yz_train[:1000],
+            label="Actual (Train)",
+            color="blue",
+            alpha=0.6,
+        )
+        plt.plot(
+            dt_train[:1000],
+            y_pred_train[:1000],
+            label="Predicted (Train)",
+            color="orange",
+            linestyle="--",
+        )
 
-        plt.title(f"{target.replace('_',' ').title()} – Actual vs Predicted ({zone})")
+        plt.title(f"{target.replace('_', ' ').title()} – Actual vs Predicted ({zone})")
         plt.xlabel("Datetime")
         plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=1))
         plt.ylabel(target)
