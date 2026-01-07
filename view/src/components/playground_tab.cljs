@@ -1,13 +1,15 @@
 (ns components.playground-tab
   (:require [reagent.core :as r]
             [state.state :refer [app-state predict-carbon-intensity]]
-            [components.common :refer [energy-slider]]))
+            [components.common :refer [energy-slider]]
+            [utils.common :refer [intensity->color]]))
 
 (defn playground-content []
   (let [feature     (:feature (:modal @app-state))
-        carbon-data (:carbon-data (:modal @app-state))
-        sample-data (first carbon-data)
         zone-id (get-in feature [:properties :zoneName])
+        intensities (:carbon-intensities @app-state)
+        carbon-data (get-in intensities [zone-id])
+        sample-data (first carbon-data)
         raw-features (:raw-features @app-state)
         zone-features (get raw-features zone-id)
         form-state
@@ -188,6 +190,7 @@
            :else
            [:div.prediction-display
             [:h2
+             {:style {:color (intensity->color @prediction-result)}}
              (str (.toFixed @prediction-result 1)
                   " gCO₂ / kWh")]
 
