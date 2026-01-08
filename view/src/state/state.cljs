@@ -1,7 +1,6 @@
 (ns state.state
   (:require [reagent.core :as r]
             [clojure.string :as str]
-            [clojure.walk :refer [keywordize-keys]]
             [data.SE :as SE]
             [data.SE-1 :as SE-1]
             [data.SE-2 :as SE-2]
@@ -103,7 +102,6 @@
                                  :feature feature
                                  :active-tab :hindcast}))
 
-;; Close modal
 (defn close-modal! []
   (swap! app-state assoc-in [:modal :open] false))
 

@@ -3,16 +3,15 @@
             [components.region :refer [regions-selector]]
             [components.datetime-selector :refer [datetime-selector]]
             [components.map :refer [map-component]]))
+
 (defn collapsible-sidebar []
-  (let [{:keys [sidebar-open? selected-date selected-hour]} @app-state
+  (let [{:keys [sidebar-open?]} @app-state
         toggle-sidebar! #(swap! app-state update :sidebar-open? not)]
     [:div.flex.h-full.relative
-     ;; Backdrop overlay for mobile
      (when sidebar-open?
        [:div.fixed.inset-0.bg-black.bg-opacity-50.z-40.lg:hidden
         {:on-click toggle-sidebar!}])
      
-     ;; Sidebar
      [:div.bg-white.shadow-lg.transition-all.duration-300.ease-in-out.flex.flex-col.z-50
       {:class [(if sidebar-open? "translate-x-0" "translate-x-[-100%]")
                ;; Mobile: fixed overlay, Desktop: static sidebar
@@ -23,7 +22,6 @@
                (when-not sidebar-open? "lg:w-0")]
        :style {:overflow (if sidebar-open? "visible" "hidden")}}
       
-      ;; Header
       [:div.p-4.border-b.border-slate-200.flex.items-center.justify-between.bg-gradient-to-r.from-indigo-50.to-white
        [:div.flex.items-center.space-x-2
         [:div.w-8.h-8.bg-indigo-600.rounded-lg.flex.items-center.justify-center
@@ -36,14 +34,12 @@
         [:svg.w-5.h-5 {:fill "none" :stroke "currentColor" :viewBox "0 0 24 24"}
          [:path {:stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M6 18L18 6M6 6l12 12"}]]]]
       
-      ;; Content
       [:div.flex-1.overflow-y-auto.p-4.space-y-6
-       ;; Region Selection
+
        (regions-selector)
-       ;; Date Selection
+       
        (datetime-selector)]]
      
-     ;; Toggle Button (when closed) - Mobile floating, Desktop edge button
      (when-not sidebar-open?
        [:button.bg-white.border.border-slate-200.shadow-lg.hover:bg-indigo-50.transition-colors.z-30
         {:class ["fixed lg:absolute"
@@ -54,7 +50,6 @@
         [:svg.w-5.h-5.text-slate-600 {:fill "none" :stroke "currentColor" :viewBox "0 0 24 24"}
          [:path {:stroke-linecap "round" :stroke-linejoin "round" :stroke-width "2" :d "M4 6h16M4 12h16M4 18h16"}]]])
      
-     ;; Map Area
      [:div.flex-1.w-full
-      {:class (when sidebar-open? "hidden lg:block")} ; Hide map on mobile when sidebar open
+      {:class (when sidebar-open? "hidden lg:block")}
       (map-component)]]))

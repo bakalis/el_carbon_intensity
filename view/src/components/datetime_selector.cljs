@@ -82,7 +82,6 @@
            :on-click #(swap! app-state assoc :selected-hour hour)}
           (str (when (< hour 10) "0") hour)])]]
 
-     ;; Summary
      [:div.p-3.bg-gradient-to-br.from-indigo-50.to-blue-50.rounded-lg.border.border-indigo-200
       [:p.text-xs.font-medium.text-slate-600.mb-1 "Currently Viewing"]
       [:p.text-sm.font-semibold.text-slate-900 (or selected-date "2024-01-15")]

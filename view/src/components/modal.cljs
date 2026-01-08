@@ -3,22 +3,6 @@
             [clojure.walk :refer [keywordize-keys]] [components.hindcast-tab :refer [hindcast-chart]]
             [components.playground-tab :refer [playground-content]]))
 
-;; Extract unique dates from carbon data
-(defn get-available-dates [data]
-  (when data
-    (->> data
-         (map :date_time)
-         (map #(.slice % 0 10))
-         distinct
-         sort
-         vec)))
-
-;; Filter data for a specific date
-(defn filter-data-by-date [data date]
-  (when data
-    (filter #(= (.slice (:date_time %) 0 10) date) data)))
-
-;; Modal with tabs
 (defn modal []
   (let [{:keys [open feature active-tab]} (:modal @app-state)
         carbon-intensities (:carbon-intensities @app-state)
@@ -30,8 +14,7 @@
         [:div.modal-header
          [:h2 (str zone-id " - " (:selected-date @app-state))]
          [:button.close-btn {:on-click close-modal!} "×"]]
-        
-        ;; Tab buttons
+
         [:div.tab-navigation
          [:button.tab-button 
           {:class (when (= active-tab :hindcast) "active")
@@ -49,5 +32,6 @@
               (if (= active-tab :playground)
                 [playground-content]
                 [hindcast-chart carbon-data]))])]
+
         [:div.modal-footer
          [:button.btn-primary {:on-click close-modal!} "Close"]]]])))
