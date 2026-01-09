@@ -5,7 +5,8 @@
             [data.SE-1 :as SE-1]
             [data.SE-2 :as SE-2]
             [data.SE-3 :as SE-3]
-            [data.SE-4 :as SE-4]))
+            [data.SE-4 :as SE-4]
+            [cljs.core :as c]))
 
 ;; App state
 (defonce app-state (r/atom {:center [62.3293 18.0686]
@@ -29,7 +30,7 @@
 
 ;; API configuration
 (def api-base-url "https://bakalis-el-carbon-intensity-backend.hf.space")
-; (def api-base-url "http://localhost:8000")
+; (def api-base-url "http://localhost:7860")
 
 (defn fetch-raw-features! []
   (-> (js/fetch (str api-base-url "/raw-features"))
@@ -123,3 +124,17 @@
                                   SE-3/data 
                                   SE-4/data]))))))
 
+(c/comment 
+  (-> (deref state.state/app-state)
+      (dissoc :geojson)
+      (dissoc :raw-features)
+      (dissoc :carbon-intensities)) ; nil
+  
+  (-> (deref state.state/app-state)
+      (keys))
+
+  (-> (deref state.state/app-state)
+      (:raw-features))
+  
+  (-> (deref state.state/app-state)
+      (:carbon-intensities)))
