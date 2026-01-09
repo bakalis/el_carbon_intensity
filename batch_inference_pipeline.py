@@ -112,7 +112,8 @@ for zone in settings.ZONES:
             metadata = json.load(f)
 
         zone_data_transformed = model_dependent_transform(
-            zone_data, selected_features=metadata["selected_features"]
+            zone_data,
+            selected_features=list(metadata["selected_features"].keys()) + ["datetime"],
         ).drop(columns=["datetime"])
         column_name = target + "_prediction"
         zone_prediction[column_name] = model.predict(xgb.DMatrix(zone_data_transformed))
