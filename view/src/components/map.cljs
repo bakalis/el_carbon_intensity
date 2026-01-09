@@ -1,37 +1,8 @@
 (ns components.map
   (:require ["react-leaflet" :refer [MapContainer TileLayer GeoJSON]]
+            [utils.common :refer [intensity->color]]
+            [utils.datetime :refer [index-intensities-by-hour]]
             [state.state :refer [app-state open-modal!]]))
-
-(defn hour-from-iso-int [dt]
-  (js/parseInt (subs dt 11 13)))
-
-(defn index-intensities-by-hour [intensities]
-  (into {}
-        (for [[zone entries] intensities]
-          [zone
-           (into {}
-                 (map (fn [e]
-                        [(hour-from-iso-int (get e "date_time")) e])
-                      entries))])))
-
-(defn intensity->color [ci]
-  (cond
-    (nil? ci)  "#cccccc"   ;; no data
-
-    (< ci 30)  "#1e8449"   ;; deep green
-    (< ci 60)  "#27ae60"
-    (< ci 90)  "#58d68d"
-    (< ci 120) "#a9dfbf"
-
-    (< ci 160) "#f9e79f"   ;; yellow
-    (< ci 200) "#f4d03f"
-
-    (< ci 240) "#f5b041"   ;; orange
-    (< ci 300) "#eb984e"
-
-    (< ci 360) "#e74c3c"   ;; red
-    (< ci 420) "#cb4335"
-    :else      "#7b241c")) ;; dark red
 
 (defn geojson-style
   [intensities]
@@ -43,7 +14,6 @@
           ci (get-in intensities-by-datetime
                      [region-id selected-hour "actual_intensity"])
           fill-color    (intensity->color ci)]
-      (js/console.log (pr-str intensities-by-datetime))
       (clj->js
         {:fillColor   fill-color
          :weight      2

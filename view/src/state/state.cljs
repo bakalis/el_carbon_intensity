@@ -23,8 +23,6 @@
                             :carbon-intensities nil
                             :modal {:open false
                                     :feature nil
-                                    :carbon-data nil
-                                    :loading false
                                     :error nil
                                     :active-tab :hindcast}}))
 
@@ -62,6 +60,24 @@
       (.catch (fn [err]
                 (js/console.error "Error fetching carbon intensities:" err)))))
 
+(defn fetch-day-all-carbon-intensities! [request-date]
+  (-> (js/fetch (str api-base-url "/day-all-carbon-intensities"
+                     "?request_date=" request-date))
+      (.then (fn [response]
+               (if (.-ok response)
+                 (.then (.json response)
+                        (fn [data]
+                          (let [clj-data (js->clj data)
+                                keywordized-data (js->clj data :keywordize-keys true)
+                                first-date (-> keywordized-data vals first first :date_time (str/split #"T") first)]
+                            (swap! app-state
+                                   #(assoc % 
+                                           :carbon-intensities clj-data
+                                           :selected-date first-date)))))
+                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
+      (.catch (fn [err]
+                (js/console.error "Error fetching carbon intensities:" err)))))
+
 (defn predict-carbon-intensity [form-data]
   (let [payload (clj->js form-data)]
     (-> (js/fetch (str api-base-url "/predict")
@@ -78,55 +94,14 @@
                   (js/console.error "Prediction error:" err)
                   {:error (.-message err)})))))
 
-;; Fetch carbon intensity data for a zone
-(defn fetch-carbon-intensity! [zone-name request-date]
-  (swap! app-state
-         (fn [s]
-           (-> s
-               (assoc-in [:modal :loading] true)
-               (assoc-in [:modal :error] nil))))
-
-  (-> (js/fetch (str api-base-url "/carbon-intensity"
-                     "?request_date=" request-date
-                     "&zone_id=" zone-name))
-      (.then (fn [response]
-               (if (.-ok response)
-                 (.json response)
-                 (throw (js/Error. (str "HTTP error: " (.-status response)))))))
-      (.then (fn [data]
-               (let [parsed-data (js->clj data :keywordize-keys true)]
-                 (swap! app-state
-                        (fn [s]
-                          (-> s
-                              (assoc-in [:modal :carbon-data] parsed-data)
-                              (assoc-in [:modal :loading] false))))
-                 parsed-data)))
-      (.catch (fn [error]
-                (js/console.error "Error fetching carbon intensity:" error)
-                (swap! app-state
-                       (fn [s]
-                         (-> s
-                             (assoc-in [:modal :error] (.-message error))
-                             (assoc-in [:modal :loading] false))))))))
-
 (defn set-active-tab! [tab]
   (swap! app-state assoc-in [:modal :active-tab] tab))
 
-;; Open modal and fetch data for the feature
 (defn open-modal! [feature]
-  (let [zone-name (get-in feature [:properties :zoneName])
-        today (-> (js/Date.) .toISOString (.slice 0 10))] ; Format: YYYY-MM-DD
-    (swap! app-state assoc :modal {:open true 
-                                   :feature feature
-                                   :carbon-data nil
-                                   :loading false
-                                   :error nil
-                                   :active-tab :hindcast})
-    ;; Fetch carbon intensity data when modal opens
-    (when zone-name
-      (fetch-carbon-intensity! zone-name today))))
+  (swap! app-state assoc :modal {:open true 
+                                 :feature feature
+                                 :active-tab :hindcast}))
 
-;; Close modal
 (defn close-modal! []
   (swap! app-state assoc-in [:modal :open] false))
 

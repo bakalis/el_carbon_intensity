@@ -1,17 +1,13 @@
 (ns components.app
   (:require [reagent.core :as r]
             [components.sidebar :refer [collapsible-sidebar]]
-            [state.state :refer [app-state fetch-all-carbon-intensities! fetch-raw-features!]]
+            [state.state :refer [fetch-all-carbon-intensities! fetch-raw-features!]]
             [components.modal :refer [modal]]))
 
-;; Main app
 (defn app []
-  (r/with-let [_ (do (swap! app-state (fn [old-state] (assoc old-state :loading? true)))
-                     (fetch-raw-features!)
-                     (fetch-all-carbon-intensities!)
-                     (swap! app-state (fn [old-state] (assoc old-state :loading? false))))]
+  (r/with-let [_ (do (fetch-raw-features!)
+                     (fetch-all-carbon-intensities!))]
     [:div.min-h-screen.bg-gradient-to-br.from-slate-50.to-slate-100
-     ;; Top Navigation Bar
      [:nav.bg-white.shadow-sm.border-b.border-slate-200
       [:div.max-w-7xl.mx-auto.px-4.sm:px-6.lg:px-8
        [:div.flex.items-center.justify-between.h-16
