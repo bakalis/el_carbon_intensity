@@ -23,24 +23,24 @@ model_dir.mkdir(parents=True, exist_ok=True)
 
 carbon_intensity_fg = fs.get_feature_group(
     name="carbon_intensity",
-    version=1,
+    version=2,
 )
 electricity_generation_fg = fs.get_feature_group(
     name="electricity_generation",
-    version=1,
+    version=2,
 )
 electricity_consumption_fg = fs.get_feature_group(
     name="electricity_consumption",
-    version=1,
+    version=2,
 )
 electricity_flow_fg = fs.get_feature_group(
     name="electricity_flow",
-    version=1,
+    version=2,
 )
 feature_view = fs.get_or_create_feature_view(
     name=f"carbon_intensity_fv",
     description="Energy data from entso-e with Carbon Intensity as target",
-    version=1,
+    version=2,
     labels=["ci_direct", "ci_lifecycle"],
     query=carbon_intensity_fg.select(
         ["datetime", "zone_id", "ci_direct", "ci_lifecycle"]
@@ -63,6 +63,16 @@ for zone in zones:
     yz_test_full = y_test.loc[Xz_test_full.index]
 
     selected_features = list(Xz_train_full.columns[(Xz_train_full != 0).any(axis=0)])
+
+    selected_feature_stats = {
+        col: {
+            "min": float(Xz_train_full[col].min()),
+            "max": float(Xz_train_full[col].max()),
+            "median": float(Xz_train_full[col].median()),
+        }
+        for col in selected_features
+        if col not in ["datetime", "zone_id"]
+    }
 
     Xz_train_t = model_dependent_transform(Xz_train_full, selected_features)
     Xz_test_t = model_dependent_transform(Xz_test_full, selected_features)
@@ -95,7 +105,7 @@ for zone in zones:
             "zone_id": zone,
             "target": target,
             "test_start": str(test_start),
-            "selected_features": selected_features,
+            "selected_features": selected_feature_stats,
             "n_features": len(selected_features),
         }
 
@@ -108,7 +118,7 @@ for zone in zones:
 
         hopsworks_model = mr.python.create_model(
             name=f"{target}_xgboost_{zone.replace('-', '_')}_model",
-            version=1,
+            version=2,
             metrics=metrics,
             feature_view=feature_view,
             description=f"Carbon intensity predictor ({target}) for zone {zone}.",
