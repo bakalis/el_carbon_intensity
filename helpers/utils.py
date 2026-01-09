@@ -2,6 +2,16 @@ import re
 import polars as pl
 from pathlib import Path
 
+from datetime import datetime, timezone
+
+
+def datetime_to_unix(dt: datetime) -> int:
+    return int(dt.timestamp())
+
+
+def unix_to_datetime(ts: int) -> datetime:
+    return datetime.fromtimestamp(ts, tz=timezone.utc)
+
 
 def read_csv_folder(
     folder: Path,

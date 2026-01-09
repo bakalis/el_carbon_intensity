@@ -45,7 +45,7 @@ fs = project.get_feature_store()
 electricity_consumption_fg = fs.get_or_create_feature_group(
     name="electricity_consumption",
     description="Electricity consumption for zones at time",
-    version=1,
+    version=2,
     primary_key=["zone_id"],
     event_time="datetime",
     expectation_suite=con_expectation_suite,
@@ -62,3 +62,4 @@ electricity_consumption_fg.update_feature_description(
 electricity_consumption_fg.update_feature_description(
     "load", "Electricity consumption/load in MW"
 )
+

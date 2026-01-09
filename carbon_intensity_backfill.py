@@ -2,7 +2,7 @@ import hopsworks
 import polars as pl
 import great_expectations as ge
 from pathlib import Path
-from helpers.utils import read_csv_folder
+from helpers.utils import read_csv_folder, datetime_to_unix
 from helpers.config import HopsworksSettings
 
 settings = HopsworksSettings(_env_file="./.env")
@@ -24,6 +24,12 @@ ci_features = (
     .select(["datetime", "zone_id", "ci_direct", "ci_lifecycle", "data_estimated"])
     # Remove all rows that have NaNs
     .filter(~pl.any_horizontal(pl.col(pl.FLOAT_DTYPES).is_nan()))
+    .with_columns(
+        pl.col("datetime")
+        .map_elements(datetime_to_unix)
+        .cast(pl.Int64)
+        .alias("datetime_id")
+    )
     .sort("datetime")
 )
 
@@ -40,16 +46,16 @@ for col in ["ci_direct", "ci_lifecycle"]:
         )
     )
 
-
 fs = project.get_feature_store()
 
 carbon_intensity_fg = fs.get_or_create_feature_group(
     name="carbon_intensity",
     description="Carbon Intensity characteristics of each hour",
-    version=1,
-    primary_key=["zone_id"],
+    version=2,
+    primary_key=["datetime_id", "zone_id"],
     event_time="datetime",
     expectation_suite=ci_expectation_suite,
+    online_enabled=True,
 )
 
 carbon_intensity_fg.insert(ci_features, wait=True)
@@ -71,4 +77,3 @@ carbon_intensity_fg.update_feature_description(
     "data_estimated",
     "Whether or not the value was calculated based on actual Entso-E data",
 )
-
