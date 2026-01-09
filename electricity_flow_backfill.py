@@ -45,7 +45,7 @@ fs = project.get_feature_store()
 electricity_flow_fg = fs.get_or_create_feature_group(
     name="electricity_flow",
     description="Electricity imports/exports for zones at time",
-    version=1,
+    version=2,
     primary_key=["zone_id"],
     event_time="datetime",
     expectation_suite=flow_expectation_suite,
@@ -65,3 +65,4 @@ electricity_flow_fg.update_feature_description(
 electricity_flow_fg.update_feature_description(
     "export", "Total electricity export in MW"
 )
+
