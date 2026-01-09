@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from helpers.config import HopsworksSettings
+from helpers.utils import datetime_to_unix
 from helpers.transformations import GENERATION_MAPPING, model_dependent_transform
 
 settings = HopsworksSettings(_env_file="./.env")
@@ -123,11 +124,13 @@ prediction_df["hours_before_forecast"] = np.ceil(
     (prediction_df["datetime"] - now).dt.total_seconds() / 3600
 ).astype(int)
 prediction_df = prediction_df[prediction_df["hours_before_forecast"] > 0]
+prediction_df["datetime_id"] = prediction_df["datetime"].map(datetime_to_unix).astype("int64")
 predictions_fg = fs.get_or_create_feature_group(
     name="ci_predictions_xgboost",
     description="Carbon intensity prediction monitoring",
-    version=1,
-    primary_key=["zone_id", "hours_before_forecast"],
+    version=2,
+    primary_key=["zone_id", "datetime_id", "hours_before_forecast"],
     event_time="datetime",
+    online_enabled=True
 )
 predictions_fg.insert(prediction_df, wait=True)
