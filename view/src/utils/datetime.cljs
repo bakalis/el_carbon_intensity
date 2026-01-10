@@ -34,10 +34,13 @@
 
 (defn index-intensities-by-hour [intensities]
   (into {}
-        (for [[zone entries] intensities]
+        (for [[zone intensity-types] intensities]
           [zone
            (into {}
-                 (map (fn [e] [(hour-from-iso-int (get e "date_time")) e]) entries))])))
+                 (for [[intensity-type entries] intensity-types]
+                   [intensity-type
+                    (into {}
+                          (map (fn [e] [(hour-from-iso-int (get e "date_time")) e]) entries))]))])))
 
 (defn get-available-dates [data]
   (when data

@@ -4,8 +4,9 @@
 (defn header []
   (let [region-id     "SE" 
         selected-hour (:selected-hour @app-state)
+        intensity-type (name (:intensity-type @app-state))
         intensities-by-datetime (:carbon-intensities @app-state)
-        actual_intensity (get-in intensities-by-datetime [region-id selected-hour "actual_intensity"])]
+        actual_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "actual_intensity"])]
     [:nav.bg-white.shadow-sm.border-b.border-slate-200
      [:div.max-w-7xl.mx-auto.px-4.sm:px-6.lg:px-8
       [:div.flex.items-center.justify-between.h-16

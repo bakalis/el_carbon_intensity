@@ -12,6 +12,7 @@
 (defonce app-state (r/atom {:center [62.3293 18.0686]
                             :zoom 5
                             :region-mode :zones
+                            :intensity-type :lifecycle
                             :geojson [SE-1/data 
                                       SE-2/data 
                                       SE-3/data 
@@ -52,7 +53,16 @@
                         (fn [data]
                           (let [clj-data (js->clj data)
                                 keywordized-data (js->clj data :keywordize-keys true)
-                                first-date (-> keywordized-data vals first first :date_time (str/split #"T") first)]
+                                ;; Navigate through the nested structure to get first date
+                                first-date (-> keywordized-data 
+                                              vals 
+                                              first 
+                                              vals 
+                                              first 
+                                              first 
+                                              :date_time 
+                                              (str/split #"T") 
+                                              first)]
                             (swap! app-state
                                    #(assoc % 
                                            :carbon-intensities clj-data
@@ -70,7 +80,16 @@
                         (fn [data]
                           (let [clj-data (js->clj data)
                                 keywordized-data (js->clj data :keywordize-keys true)
-                                first-date (-> keywordized-data vals first first :date_time (str/split #"T") first)]
+                                ;; Navigate through the nested structure to get first date
+                                first-date (-> keywordized-data 
+                                              vals 
+                                              first 
+                                              vals 
+                                              first 
+                                              first 
+                                              :date_time 
+                                              (str/split #"T") 
+                                              first)]
                             (swap! app-state
                                    #(assoc % 
                                            :carbon-intensities clj-data
@@ -125,7 +144,7 @@
                                   SE-4/data]))))))
 
 (c/comment 
-  (-> (deref state.state/app-state)
+  (-> @app-state 
       (dissoc :geojson)
       (dissoc :raw-features)
       (dissoc :carbon-intensities)) ; nil

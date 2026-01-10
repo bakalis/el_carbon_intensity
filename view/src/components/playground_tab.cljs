@@ -8,7 +8,8 @@
   (let [feature     (:feature (:modal @app-state))
         zone-id (get-in feature [:properties :zoneName])
         intensities (:carbon-intensities @app-state)
-        carbon-data (get-in intensities [zone-id])
+        intensity-type (name (:intensity-type @app-state))
+        carbon-data (get-in intensities [zone-id intensity-type])
         sample-data (first carbon-data)
         raw-features (:raw-features @app-state)
         zone-features (get raw-features zone-id)
@@ -55,7 +56,7 @@
            (fn [e]
              (.preventDefault e)
              (reset! loading? true)
-             (-> (predict-carbon-intensity @form-state)
+             (-> (predict-carbon-intensity (assoc @form-state :output_type intensity-type))
                  (.then #(reset! prediction-result (:carbon_intensity %)))
                  (.finally #(reset! loading? false))))}
           [:h5.section-title "🏭 Fossil Fuels"]

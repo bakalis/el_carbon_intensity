@@ -2,6 +2,7 @@
   (:require [state.state :refer [app-state]]
             [components.region :refer [regions-selector]]
             [components.datetime-selector :refer [datetime-selector]]
+            [components.intensity-type-selector :refer [intensity_selector]]
             [components.map :refer [map-component]]))
 
 (defn collapsible-sidebar []
@@ -37,7 +38,7 @@
       [:div.flex-1.overflow-y-auto.p-4.space-y-6
 
        (regions-selector)
-       
+       (intensity_selector) 
        (datetime-selector)]]
      
      (when-not sidebar-open?

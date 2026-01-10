@@ -10,9 +10,10 @@
     (let [props         (js->clj (.-properties feature) :keywordize-keys true)
           region-id     (:zoneName props) 
           selected-hour (:selected-hour @app-state)
+          intensity-type (name (:intensity-type @app-state))
           intensities-by-datetime (index-intensities-by-hour intensities)
-          actual_intensity (get-in intensities-by-datetime [region-id selected-hour "actual_intensity"]) 
-          predicted_intensity (get-in intensities-by-datetime [region-id selected-hour "predicted_intensity"]) 
+          actual_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "actual_intensity"]) 
+          predicted_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "predicted_intensity"]) 
           ci (or actual_intensity predicted_intensity)
           fill-color    (intensity->color ci)]
       (clj->js
