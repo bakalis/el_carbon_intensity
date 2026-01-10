@@ -11,12 +11,13 @@
     (let [props         (js->clj (.-properties feature) :keywordize-keys true)
           region-id     (:zoneName props) 
           selected-hour (:selected-hour @app-state)
-          intensity-type (name (:intensity-type @app-state))
+          intensity-type-key (:intensity-type @app-state)
+          intensity-type (name intensity-type-key)
           intensities-by-datetime (index-intensities-by-hour intensities)
           actual_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "actual_intensity"]) 
           predicted_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "predicted_intensity"]) 
           ci (or actual_intensity predicted_intensity)
-          fill-color    (intensity->color ci)]
+          fill-color    (intensity->color ci intensity-type-key)]
       (clj->js
         {:fillColor   fill-color
          :weight      2
@@ -39,7 +40,8 @@
       (.bindTooltip layer
                     (fn []
                       (let [selected-hour (:selected-hour @app-state)
-                            intensity-type (name (:intensity-type @app-state))
+                            intensity-type-key (:intensity-type @app-state)
+                            intensity-type (name intensity-type-key)
                             intensities-by-datetime (index-intensities-by-hour intensities)
                             actual (get-in intensities-by-datetime [region-id intensity-type selected-hour "actual_intensity"]) 
                             predicted (get-in intensities-by-datetime [region-id intensity-type selected-hour "predicted_intensity"])
@@ -48,7 +50,7 @@
                         (str "<div style='padding: 8px;'>"
                              "<strong style='font-size: 14px;'>" region-id "</strong><br/>"
                              "<span style='font-size: 12px; color: #666;'>" data-type " " (str/capitalize intensity-type) " Intensity</span><br/>"
-                             "<strong style='font-size: 16px; color: " (intensity->color ci) ";'>"
+                             "<strong style='font-size: 16px; color: " (intensity->color ci intensity-type-key) ";'>"
                              (if ci (.toFixed ci 2) "N/A") " gCO₂/kWh"
                              "</strong>"
                              "</div>")))

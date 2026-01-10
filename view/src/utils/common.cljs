@@ -23,7 +23,7 @@
      :import_ (get-median "import")
      :export (get-median "export")}))
 
-(defn intensity->color [ci]
+(defn lifecycle-intensity->color [ci]
   (cond
     (nil? ci)  "#cccccc"
 
@@ -42,3 +42,26 @@
     (< ci 420) "#cb4335"
     :else      "#7b241c"))
 
+(defn direct-intensity->color [ci]
+  (cond
+    (nil? ci)  "#cccccc"
+
+    (< ci 10)  "#1e8449"
+    (< ci 20)  "#27ae60"
+    (< ci 30)  "#58d68d"
+    (< ci 50)  "#a9dfbf"
+
+    (< ci 80) "#f9e79f"
+    (< ci 100) "#f4d03f"
+
+    (< ci 120) "#f5b041"
+    (< ci 150) "#eb984e"
+
+    (< ci 180) "#e74c3c"
+    (< ci 200) "#cb4335"
+    :else      "#7b241c"))
+
+(defn intensity->color [ci intensity-type]
+  (cond 
+    (= :direct intensity-type) (direct-intensity->color ci)
+    (= :lifecycle intensity-type) (lifecycle-intensity->color ci)))

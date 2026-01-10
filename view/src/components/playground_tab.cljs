@@ -8,7 +8,8 @@
 (defn playground-content []
   (let [feature     (:feature (:modal @app-state))
         zone-id (get-in feature [:properties :zoneName])
-        intensity-type (name (:intensity-type @app-state))
+        intensity-type-key (:intensity-type @app-state)
+        intensity-type (name intensity-type-key)
         raw-features (:raw-features @app-state)
         zone-features (keywordize-keys (get raw-features zone-id))
         form-state
@@ -203,7 +204,7 @@
            :else
            [:div.prediction-display
             [:h2
-             {:style {:color (intensity->color @prediction-result)}}
+             {:style {:color (intensity->color @prediction-result intensity-type-key)}}
              (str (.toFixed @prediction-result 1)
                   " gCO₂ / kWh")]
 
