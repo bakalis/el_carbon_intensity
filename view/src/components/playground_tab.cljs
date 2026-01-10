@@ -1,43 +1,19 @@
 (ns components.playground-tab
   (:require [reagent.core :as r]
             [state.state :refer [app-state predict-carbon-intensity]]
+            [clojure.walk :refer [keywordize-keys]]
             [components.common :refer [energy-slider]]
-            [utils.common :refer [intensity->color]]))
+            [utils.common :refer [create-default-form-data intensity->color]]))
 
 (defn playground-content []
   (let [feature     (:feature (:modal @app-state))
         zone-id (get-in feature [:properties :zoneName])
-        intensities (:carbon-intensities @app-state)
         intensity-type (name (:intensity-type @app-state))
-        carbon-data (get-in intensities [zone-id intensity-type])
-        sample-data (first carbon-data)
         raw-features (:raw-features @app-state)
-        zone-features (get raw-features zone-id)
+        zone-features (keywordize-keys (get raw-features zone-id))
         form-state
         (r/atom
-          (or sample-data
-              {:date_time (-> (js/Date.) .toISOString (.slice 0 16))
-               :zone_id zone-id
-
-               :coal 0.0
-               :oil 0.0
-               :gas 0.0
-
-               :solar 0.0
-               :wind 0.0
-               :hydro 0.0
-               :hydro_storage 0.0
-               :geothermal 0.0
-               :biomass 0.0
-
-               :nuclear 0.0
-               :battery_storage 0.0
-               :other 0.0
-
-               :total 0.0
-               :load 0.0
-               :import_ 0.0
-               :export 0.0}))
+          (create-default-form-data zone-id zone-features))
 
         prediction-result (r/atom nil)
         loading?          (r/atom false)]
@@ -62,112 +38,148 @@
           [:h5.section-title "🏭 Fossil Fuels"]
 
           [:div.slider-grid 
-           (when (some #(= % "coal") zone-features) 
+           (when-let [coal-feature (first (filter #(= (:name %) "coal") zone-features))]
              [energy-slider
               {:label "Coal" :icon "⚫" :key :coal
-               :min 0 :max 5000 :step 50 :unit "MW"}
-              form-state sample-data])
+               :min (:min coal-feature) 
+               :max (:max coal-feature) 
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "oil") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "oil") zone-features))] 
              [energy-slider
               {:label "Oil" :icon "🛢️" :key :oil
-               :min 0 :max 3000 :step 50 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "gas") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "gas") zone-features))] 
              [energy-slider
               {:label "Gas" :icon "🔥" :key :gas
-               :min 0 :max 8000 :step 100 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           [:h5.section-title "♻️ Renewables"]
 
           [:div.slider-grid 
-           (when (some #(= % "solar") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "solar") zone-features))] 
              [energy-slider
               {:label "Solar" :icon "☀️" :key :solar
-               :min 0 :max 6000 :step 50 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "wind") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "wind") zone-features))] 
              [energy-slider
               {:label "Wind" :icon "💨" :key :wind
-               :min 0 :max 10000 :step 100 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "hydro") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "hydro") zone-features))] 
              [energy-slider
               {:label "Hydro" :icon "💧" :key :hydro
-               :min 0 :max 7000 :step 50 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           [:div.slider-grid 
-           (when (some #(= % "hydro_storage") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "hydro_storage") zone-features))] 
              [energy-slider
               {:label "Hydro Storage" :icon "🌊" :key :hydro_storage
-               :min -3000 :max 3000 :step 50 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "geothermal") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "geothermal") zone-features))] 
              [energy-slider
               {:label "Geothermal" :icon "🌋" :key :geothermal
-               :min 0 :max 2000 :step 25 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "biomass") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "biomass") zone-features))] 
              [energy-slider
               {:label "Biomass" :icon "🌿" :key :biomass
-               :min 0 :max 3000 :step 25 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           [:h5.section-title "⚡ Other Sources"]
 
           [:div.slider-grid 
-           (when (some #(= % "nuclear") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "nuclear") zone-features))] 
              [energy-slider
               {:label "Nuclear" :icon "⚛️" :key :nuclear
-               :min 0 :max 12000 :step 100 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "battery_storage") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "battery_storage") zone-features))] 
              [energy-slider
               {:label "Battery Storage" :icon "🔋" :key :battery_storage
-               :min -2000 :max 2000 :step 25 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "other") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "other") zone-features))] 
              [energy-slider
               {:label "Other" :icon "❓" :key :other
-               :min 0 :max 2000 :step 25 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :value (:median feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           [:h5.section-title "📊 Load & Trade"]
 
           [:div.slider-grid 
-           (when (some #(= % "total") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "total") zone-features))] 
              [energy-slider
               {:label "Total Generation" :icon "⚡" :key :total
-               :min 0 :max 25000 :step 100 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :value (:median feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "load") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "load") zone-features))] 
              [energy-slider
               {:label "Load" :icon "📈" :key :load
-               :min 0 :max 25000 :step 100 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :value (:median feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           [:div.slider-grid 
-           (when (some #(= % "import") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "import") zone-features))] 
              [energy-slider
               {:label "Import" :icon "📥" :key :import_
-               :min 0 :max 10000 :step 100 :unit "MW"}
-              form-state sample-data])
+               :min (:min feature)
+               :max (:max feature)
+               :value (:median feature)
+               :step 50 :unit "MW"}
+              form-state])
 
-           (when (some #(= % "export") zone-features) 
+           (when-let [feature (first (filter #(= (:name %) "export") zone-features))] 
              [energy-slider
               {:label "Export" :icon "📤" :key :export
-               :min 0 :max 10000 :step 100 :unit "MW"}
-              form-state sample-data])]
+               :min (:min feature)
+               :max (:max feature)
+               :step 50 :unit "MW"}
+              form-state])]
 
           ;; Submit
           [:button.btn-predict {:type "submit" :disabled @loading?}
