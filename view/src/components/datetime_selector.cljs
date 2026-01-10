@@ -1,6 +1,6 @@
 (ns components.datetime-selector
   (:require [state.state :refer [app-state fetch-day-all-carbon-intensities!]]
-            [utils.datetime :refer [today-ymd tomorrow-ymd yesterday-ymd week-ago-ymd]]))
+            [utils.datetime :refer [today-ymd tomorrow-ymd yesterday-ymd week-ago-ymd two-days-ahead-ymd]]))
 
 (defn datetime-selector []
   (let [{:keys [selected-date selected-hour]} @app-state
@@ -19,6 +19,8 @@
 
       [:input.w-full.px-3.py-2.text-sm.border.border-slate-300.rounded-lg.focus:ring-2.focus:ring-indigo-500.focus:border-indigo-500.mb-3
        {:type "date"
+        :min (week-ago-ymd)
+        :max (two-days-ahead-ymd)
         :value (or selected-date "2024-01-15")
         :on-change #(let [new-date (-> % .-target .-value)] (when-not (= selected-date new-date)
                                                               ((swap! app-state assoc :selected-date new-date)
