@@ -4,9 +4,15 @@
 (defn header []
   (let [region-id     "SE" 
         selected-hour (:selected-hour @app-state)
+        selected-date (:selected-date @app-state)
         intensity-type (name (:intensity-type @app-state))
         intensities-by-datetime (:carbon-intensities @app-state)
-        actual_intensity (get-in intensities-by-datetime [region-id intensity-type selected-hour "actual_intensity"])]
+        entries (get-in intensities-by-datetime [region-id intensity-type])
+        selected-datetime (str selected-date "T" (when (< selected-hour 10) "0") selected-hour ":00:00")
+        matching-entries (filter #(= (get % "date_time") selected-datetime) entries)
+        entry (when (seq matching-entries)
+                (apply min-key #(get % "hours_before_forecast") matching-entries))
+        actual_intensity (get entry "actual_intensity")]
     [:nav.bg-white.shadow-sm.border-b.border-slate-200
      [:div.max-w-7xl.mx-auto.px-4.sm:px-6.lg:px-8
       [:div.flex.items-center.justify-between.h-16
