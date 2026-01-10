@@ -138,7 +138,7 @@ predictions_fg = fs.get_or_create_feature_group(
 )
 predictions_fg.insert(prediction_df, wait=True)
 predictions_query = (
-    predictions_fg.select(["datetime", "datetime_id", "zone_id", "ci_direct_prediction", "ci_lifecycle_prediction", "hours_before_forecast", "coal", "battery_storage", "biomass", "export", "gas", "geothermal", "hydro", "hydro_storage", "import", "load", "nuclear", "oil", "other", "solar", "total", "wind"])
+    predictions_fg.select(["datetime", "datetime_id", "zone_id", "ci_direct_prediction", "ci_lifecycle_prediction", "hours_before_forecast"])
 )
 try:
     ci_fv = fs.create_feature_view(
