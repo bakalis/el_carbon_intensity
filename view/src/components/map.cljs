@@ -11,8 +11,9 @@
           region-id     (:zoneName props) 
           selected-hour (:selected-hour @app-state)
           intensities-by-datetime (index-intensities-by-hour intensities)
-          ci (get-in intensities-by-datetime
-                     [region-id selected-hour "actual_intensity"])
+          actual_intensity (get-in intensities-by-datetime [region-id selected-hour "actual_intensity"]) 
+          predicted_intensity (get-in intensities-by-datetime [region-id selected-hour "predicted_intensity"]) 
+          ci (or actual_intensity predicted_intensity)
           fill-color    (intensity->color ci)]
       (clj->js
         {:fillColor   fill-color

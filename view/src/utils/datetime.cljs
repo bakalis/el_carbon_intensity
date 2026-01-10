@@ -14,6 +14,11 @@
     (.setDate d (- (.getDate d) 1))
     (date->ymd d)))
 
+(defn tomorrow-ymd []
+  (let [d (js/Date.)]
+    (.setDate d (+ (.getDate d) 1))
+    (date->ymd d)))
+
 (defn week-ago-ymd []
   (let [d (js/Date.)]
     (.setDate d (- (.getDate d) 7))

@@ -1,6 +1,6 @@
 (ns components.datetime-selector
   (:require [state.state :refer [app-state fetch-day-all-carbon-intensities!]]
-            [utils.datetime :refer [today-ymd yesterday-ymd week-ago-ymd]]))
+            [utils.datetime :refer [today-ymd tomorrow-ymd yesterday-ymd week-ago-ymd]]))
 
 (defn datetime-selector []
   (let [{:keys [selected-date selected-hour]} @app-state
@@ -24,12 +24,17 @@
                                                               ((swap! app-state assoc :selected-date new-date)
                                                                (fetch-day-all-carbon-intensities! new-date))))}]
 
-      [:div.flex.flex-wrap.gap-2
+      [:div.grid.grid-cols-2.gap-2
        [:button.px-3.py-1.5.text-xs.font-medium.text-slate-600.bg-slate-50.hover:bg-indigo-50.hover:text-indigo-700.rounded-md.transition-colors
         {:on-click #(let [new-date (today-ymd)] (when-not (= selected-date new-date)
                                                   ((swap! app-state assoc :selected-date new-date)
                                                    (fetch-day-all-carbon-intensities! new-date))))}
         "Today"]
+       [:button.px-3.py-1.5.text-xs.font-medium.text-slate-600.bg-slate-50.hover:bg-indigo-50.hover:text-indigo-700.rounded-md.transition-colors
+        {:on-click #(let [new-date (tomorrow-ymd)] (when-not (= selected-date new-date)
+                                                     ((swap! app-state assoc :selected-date new-date)
+                                                      (fetch-day-all-carbon-intensities! new-date))))}
+        "Tomorrow"]
        [:button.px-3.py-1.5.text-xs.font-medium.text-slate-600.bg-slate-50.hover:bg-indigo-50.hover:text-indigo-700.rounded-md.transition-colors
         {:on-click #(let [new-date (yesterday-ymd)] (when-not (= selected-date new-date)
                                                       ((swap! app-state assoc :selected-date new-date)
@@ -82,7 +87,7 @@
            :on-click #(swap! app-state assoc :selected-hour hour)}
           (str (when (< hour 10) "0") hour)])]]
 
-     [:div.p-3.bg-gradient-to-br.from-indigo-50.to-blue-50.rounded-lg.border.border-indigo-200
+     [:div.p-2.bg-gradient-to-br.from-indigo-50.to-blue-50.rounded-lg.border.border-indigo-200.mt-5
       [:p.text-xs.font-medium.text-slate-600.mb-1 "Currently Viewing"]
       [:p.text-sm.font-semibold.text-slate-900 (or selected-date "2024-01-15")]
       [:p.text-sm.font-semibold.text-indigo-600 (format-hour (or selected-hour 12))]]]))
