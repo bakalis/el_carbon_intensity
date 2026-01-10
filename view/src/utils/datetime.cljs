@@ -44,16 +44,3 @@
                                  [hour (apply min-key #(get % "hours_before_forecast") entries-for-hour)])
                                (group-by #(hour-from-iso-int (get % "date_time")) entries)))]))])))
 
-(defn get-available-dates [data]
-  (when data
-    (->> data
-         (map :date_time)
-         (map #(.slice % 0 10))
-         distinct
-         sort
-         vec)))
-
-(defn filter-data-by-date [data date]
-  (when data
-    (filter #(= (.slice (:date_time %) 0 10) date) data)))
-

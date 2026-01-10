@@ -1,7 +1,6 @@
 (ns components.hindcast-tab
   (:require ["recharts" :refer [LineChart Line XAxis YAxis CartesianGrid Tooltip Legend ResponsiveContainer]]
-            [state.state :refer [app-state]]
-            [reagent.core :as r]))
+            [state.state :refer [app-state]]))
 
 (defn hindcast-chart [data on-hours-changed]
   (when (and data (seq data))
