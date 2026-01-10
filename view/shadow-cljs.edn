@@ -4,11 +4,11 @@
                   :output-dir "../docs/js"
                   :asset-path "/js"
                   :js-options {:css-support true}
-                  :modules    {:main {:init-fn test-app.main/init}}
-                  :devtools   {:after-load test-app.main/mount-root}}
+                  :modules    {:main {:init-fn main.main/init}}
+                  :devtools   {:after-load main.main/mount-root}}
             :release {:target     :browser
                       :output-dir "../docs/js"
                       :asset-path "/clojurescript_react_github_pages/js"
                       :js-options {:css-support true}
-                      :modules    {:main {:init-fn test-app.main/init}}
+                      :modules    {:main {:init-fn main.main/init}}
                       :compiler-options {:optimizations :advanced}}}}

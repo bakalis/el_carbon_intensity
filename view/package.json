@@ -1,5 +1,5 @@
 {
-    "name": "test_app",
+    "name": "el_carbon_intensity",
     "version": "0.1.0",
     "scripts": {
         "dev": "shadow-cljs watch app",

@@ -1,4 +1,4 @@
-(ns test-app.main
+(ns main.main
   (:require [reagent.dom.client :as rdomc]
             [components.app :refer [app]]
             [state.state :refer [app-state close-modal! set-region-mode!]]))

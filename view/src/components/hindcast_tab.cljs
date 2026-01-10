@@ -72,13 +72,13 @@
             [:> Legend]
             [:> Line {:type "monotone"
                       :dataKey "actual"
-                      :stroke "#FFA500"
+                      :stroke "#667eea"
                       :strokeWidth 2
                       :name "Actual Intensity"
                       :dot {:r 4}}]
             [:> Line {:type "monotone"
                       :dataKey "predicted"
-                      :stroke "#667eea"
+                      :stroke "#FFA500"
                       :strokeWidth 2
                       :name "Predicted Intensity"
                       :dot {:r 4}}]]]]]))))
