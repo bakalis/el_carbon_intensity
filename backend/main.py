@@ -1,27 +1,51 @@
-import random
-from datetime import datetime, timedelta
-from typing import List
 import asyncio
-import os
 import logging
-import httpx
+import os
+import time
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from typing import List
 
+import hopsworks
+import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from .model import CarbonIntensityPrediction, \
-    load_models, to_model_input, \
-    CarbonIntensityRequest, CarbonIntensityResponse
-import hopsworks
-from dotenv import load_dotenv
+
+from .model import (
+    CarbonIntensityPrediction,
+    CarbonIntensityRequest,
+    CarbonIntensityResponse,
+    load_models,
+    to_model_input,
+)
 
 load_dotenv()
+fs = None
+ci_fv = None
+cp_fv = None
 models = None
+raw_features = None
+feature_order = None
 models_ready = False
 settings = None
-project = None
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+scheduler = AsyncIOScheduler()
+
+async def load_latest_feature_views():
+    global ci_fv, cp_fv, fs
+    logger.info("Loading latest feature views...")
+    all_ci_versions = fs.get_feature_views(name="ci_actuals_fv")
+    latest_ci_fv = sorted(all_ci_versions, key=lambda fv: fv.version)[-1]
+    ci_fv = latest_ci_fv
+    ci_fv.init_serving(training_dataset_version=ci_fv.version)
+    all_cp_versions = fs.get_feature_views(name="ci_predictions_fv")
+    latest_cp_fv = sorted(all_cp_versions, key=lambda fv: fv.version)[-1]
+    cp_fv = latest_cp_fv
+    cp_fv.init_serving(training_dataset_version=cp_fv.version)
+    logger.info(f"Loaded latest feature views: ci_actuals_fv v{ci_fv.version}, ci_predictions_fv v{cp_fv.version}")
 
 def _login_blocking():
     return hopsworks.login(
@@ -30,7 +54,9 @@ def _login_blocking():
         api_key_value=os.getenv("HOPSWORKS_API_KEY"),
     )
 
+
 async def try_login_with_timeout(seconds: float = 5.0):
+    global ci_fv, cp_fv, fs
     loop = asyncio.get_running_loop()
     logger.info("Hopsworks login: starting (with timeout)")
     try:
@@ -39,42 +65,50 @@ async def try_login_with_timeout(seconds: float = 5.0):
             timeout=seconds,
         )
         logger.info("Hopsworks login: success")
+        fs = project.get_feature_store()
+        await load_latest_feature_views()
         return project
     except asyncio.TimeoutError:
         logger.error(f"Hopsworks login: timed out after {seconds}s")
         return None
 
 def load_models_sync():
-    global models, project, models_ready
+    global models, models_ready, raw_features, feature_order
     try:
         # run sync wrapper of the async timeout
-        project = asyncio.run(try_login_with_timeout(5.0))
+        project = asyncio.run(try_login_with_timeout(30.0))
         if project is None:
             models_ready = False
             return
-        models = load_models(project)
+        models, raw_features, feature_order = load_models(project)
         models_ready = True
     except Exception:
         logging.exception("load_models_sync failed")
         models_ready = False
 
+
+def hourly_unix_utc(day_str: str) -> List[int]:
+    """
+    Given 'YYYY-MM-DD', return Unix timestamps (seconds) for each hour
+    of that day in UTC.
+    """
+    day = datetime.strptime(day_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    return [int((day + timedelta(hours=h)).timestamp()) for h in range(24)]
+
+
 async def load_models_bg():
     loop = asyncio.get_running_loop()
+    scheduler.add_job(load_latest_feature_views, "interval", minutes=45)
+    scheduler.start()
     await loop.run_in_executor(None, load_models_sync)
 
-async def check_hopsworks_connectivity():
-    url = f"https://{os.getenv('HOPSWORKS_HOST')}/api/v2/projects"
-    headers = {"x-api-key": os.getenv("HOPSWORKS_API_KEY")}
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        r = await client.get(url, headers=headers)
-        return r.status_code, r.text[:200]
-    
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     asyncio.create_task(load_models_bg())
     yield
     print("Shutting down application")
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -89,92 +123,131 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def read_root():
-    model = models[('SE', 'ci_lifecycle')]
-    print(f"Using model: {model}")
-    return {"message": "Welcome to the Carbon Intensity Prediction API"}
+    return "Welcome to the Carbon Intensity Prediction API"
 
-@app.get("/kaithhealthcheck")
-async def health():
-    return {"status": "ok"}
 
-@app.get("/kaithheathcheck")
-async def heath():
-    return {"status": "ok"}
+@app.get("/refresh")
+async def refresh():
+    asyncio.create_task(load_latest_feature_views())
+    return "Refresh triggered"
 
 @app.get("/readiness")
 async def readiness():
     return {"ready": models_ready}
 
-@app.get("/debug/hopsworks")
-async def debug_hopsworks():
-    code, body = await check_hopsworks_connectivity()
-    return {"status_code": code, "body_snippet": body}
 
-@app.get("/carbon-intensity", response_model=List[CarbonIntensityPrediction])
-def get_carbon_intensity_predictions(
+@app.get(
+    "/all-carbon-intensities", response_model=dict[str, dict[str, List[CarbonIntensityPrediction]]]
+)
+def all_get_carbon_intensity_predictions():
+    today = datetime.today().strftime("%Y-%m-%d")
+    return day_all_get_carbon_intensity_predictions(request_date=today)
+
+
+@app.get(
+    "/day-all-carbon-intensities",
+    response_model=dict[str, dict[str, List[CarbonIntensityPrediction]]],
+)
+def day_all_get_carbon_intensity_predictions(
     request_date: str = Query(..., description="Reference date in YYYY-MM-DD format"),
-    zone_name: str = Query("SE", description="Electricity zone name"),
 ):
-    base_date = datetime.strptime(request_date, "%Y-%m-%d")
+    request_date_dt = datetime.strptime(request_date, "%Y-%m-%d")
+    today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+    if request_date_dt < (today - timedelta(days=7)) or request_date_dt > (today + timedelta(days=2)):
+        raise HTTPException(
+            status_code=400,
+            detail="Requested date is out of the allowed range (7 days in the past or 2 days in the future from today)",
+        )
+    
+    global ci_fv, cp_fv
+    start = time.perf_counter()
+    timestamps = hourly_unix_utc(request_date)
+    zone_ids = ["SE", "SE-SE1", "SE-SE2", "SE-SE3", "SE-SE4"]
+    ci_types = ["lifecycle", "direct"]
+    entries = [{"datetime_id": ts, "zone_id": z} for ts in timestamps for z in zone_ids]
 
-    today = datetime.today()
+    entries_pred = [
+        {"datetime_id": ts, "zone_id": z, "hours_before_forecast": h}
+        for ts in timestamps
+        for z in zone_ids
+        for h in range(1, 25)
+    ]
+    start = time.perf_counter()
 
-    start = base_date - timedelta(days=7)
-    end = base_date + timedelta(days=7)
+    actuals_df = ci_fv.get_feature_vectors(entries, return_type="pandas", allow_missing=True)
+    actuals_df = actuals_df.dropna(subset=["datetime"])
+    preds_raw_df = cp_fv.get_feature_vectors(entries_pred, return_type="pandas", allow_missing=True)
+    preds_raw_df = preds_raw_df.dropna(subset=["datetime"])
+    preds_raw_df = preds_raw_df.sort_values(['datetime', 'hours_before_forecast'])
 
-    predictions: list[CarbonIntensityPrediction] = []
+    end = time.perf_counter()
+    print(f"Queries execution time: {end - start:.6f} seconds")
 
-    current = start
-    while current <= end:
-        include_actuals = current <= today
-        for hour in range(24):
-            timestamp = current.replace(hour=hour, minute=0, second=0)
+    start = time.perf_counter()
+    merged_df = preds_raw_df.merge(actuals_df, on=["zone_id", "datetime_id"], how="outer")
 
-            predicted = round(random.uniform(50, 500), 2)
+    # Sort once for groupby efficiency
+    merged_df = merged_df.sort_values(["zone_id", "datetime_id"])
 
-            actual = (
-                round(predicted + random.uniform(-30, 30), 2)
-                if include_actuals
-                else None
-            )
-
-            predictions.append(
+    # Build results efficiently using groupby
+    all_predictions = {}
+    for zone_id, group_df in merged_df.groupby("zone_id", sort=False):
+        all_predictions[zone_id] = {}
+        for ci_type in ci_types:
+            all_predictions[zone_id][ci_type] = [
                 CarbonIntensityPrediction(
-                    datetime=timestamp.isoformat(),
-                    zone_name=zone_name,
-                    predicted_intensity=predicted,
-                    actual_intensity=actual,
+                    date_time=datetime.fromtimestamp(row['datetime_id']).isoformat(),
+                    zone_id=row["zone_id"],
+                    predicted_intensity=None
+                    if pd.isna(row[f"ci_{ci_type}_prediction"])
+                    else float(row[f"ci_{ci_type}_prediction"]),
+                    actual_intensity=None
+                    if pd.isna(row[f"ci_{ci_type}"])
+                    else float(row[f"ci_{ci_type}"]),
+                    hours_before_forecast=1
+                    if pd.isna(row["hours_before_forecast"])
+                    else int(row["hours_before_forecast"])
                 )
-            )
+                for _, row in group_df.iterrows()
+            ]
 
-        current += timedelta(days=1)
-
-    return predictions
+    end = time.perf_counter()
+    print(f"Creating predictions time: {end - start:.6f} seconds")
+    return all_predictions
 
 @app.post("/predict", response_model=CarbonIntensityResponse)
 def predict_carbon_intensity(req: CarbonIntensityRequest):
-    global models, models_ready
-    
+    global models, models_ready, raw_features, feature_order
+
     if not models_ready:
         raise HTTPException(status_code=503, detail="Models still loading")
 
     zone_id = req.zone_id
-    output_type = req.output_type if req.output_type else 'ci_lifecycle'
+    output_type = req.output_type if req.output_type else "ci_lifecycle"
     model = models.get((zone_id, output_type))
     if model is None:
-        raise HTTPException(status_code=500, detail="Could not find model for the specified zone and output type")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not find model for the specified zone and output type",
+        )
 
-    X = to_model_input(zone_id, req)
+    X = to_model_input(zone_id, req, raw_features, feature_order)
 
     prediction = model.predict(X)
 
-    return CarbonIntensityResponse(
-        carbon_intensity=float(prediction[0])
-    )
+    return CarbonIntensityResponse(carbon_intensity=float(prediction[0]))
+
+
+@app.get("/raw-features")
+def get_raw_features_endpoint():
+    global raw_features
+    return raw_features
+
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="localhost", port=7860)

@@ -1,32 +1,45 @@
-from pydantic import BaseModel
-from xgboost import XGBRegressor
 from datetime import datetime
-from helpers.transformations import model_dependent_transform
+from typing import Optional
+
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel
+from xgboost import XGBRegressor
+import json
+
+from helpers.transformations import model_dependent_transform
+
+class FeatureModel(BaseModel):
+    name: str
+    min: int
+    max: int
+    median: int
 
 class CarbonIntensityPrediction(BaseModel):
-    datetime: str
-    zone_name: str
-    predicted_intensity: float
+    date_time: str
+    zone_id: str
+    predicted_intensity: Optional[float]
     actual_intensity: float | None = None
+    hours_before_forecast: Optional[int] = None
+
 
 class CarbonIntensityRequest(BaseModel):
-    datetime: datetime
-    zone_id: str
-    output_type: str | None = "ci_lifecycle"  # "ci_lifecycle" or "ci_direct"
+    zone_id: str  # required
 
-    gas: float
-    solar: float
-    hydro: float
-    wind: float
-    nuclear: float
-    other: float
+    date_time: Optional[datetime] = None
+    output_type: Optional[str] = "lifecycle"  # "lifecycle" or "direct"
 
-    total: float
-    load: float
-    import_: float
-    export: float
+    gas: Optional[float] = None
+    solar: Optional[float] = None
+    hydro: Optional[float] = None
+    wind: Optional[float] = None
+    nuclear: Optional[float] = None
+    other: Optional[float] = None
+
+    total: Optional[float] = None
+    load: Optional[float] = None
+    import_: Optional[float] = None
+    export: Optional[float] = None
 
     class Config:
         populate_by_name = True
@@ -40,133 +53,74 @@ class CarbonIntensityResponse(BaseModel):
     carbon_intensity: float
     unit: str = "gCO2eq/kWh"
 
+
 def load_models(project):
     mr = project.get_model_registry()
-    model_zones = ['SE', 'SE_SE1', 'SE_SE2', 'SE_SE3', 'SE_SE4']
-    model_output_types = ['ci_lifecycle', 'ci_direct']
+    model_zones = ["SE", "SE_SE1", "SE_SE2", "SE_SE3", "SE_SE4"]
+    input_zones = {"SE": "SE", "SE_SE1": "SE-SE1", "SE_SE2": "SE-SE2", "SE_SE3": "SE-SE3", "SE_SE4": "SE-SE4"}
+    model_output_types = ["lifecycle", "direct"]
     model_dirs = {}
     models = {}
-
+    raw_features: dict[str, list[FeatureModel]] = {}
+    feature_order: dict[str, list[str]] = {}
+    
     for zone in model_zones:
         for output_type in model_output_types:
-            model_name = f"{output_type}_xgboost_{zone}_model"
-            model = mr.get_model(
-                name=model_name,
-                version=1
+            model_name = f"ci_{output_type}_xgboost_{zone}_model"
+            model = mr.get_model(name=model_name, version=2)
+            model_dir = model.download()
+            model_dirs[(input_zones[zone], output_type)] = model_dir
+            models[(input_zones[zone], output_type)] = XGBRegressor()
+            models[(input_zones[zone], output_type)].load_model(
+                model_dir + "/model.json"
             )
+            
+            if input_zones[zone] not in raw_features:
+                with open(model_dir + "/metadata.json", "r") as f:
+                    metadata = json.load(f)
+                    features = []
+                    for feature_name, feature_stats in metadata["selected_features"].items():
+                        features.append(FeatureModel(
+                            name=feature_name,
+                            min=int(feature_stats["min"]),
+                            max=int(feature_stats["max"]),
+                            median=int(feature_stats["median"])
+                        ))
+                    raw_features[input_zones[zone]] = features
+                
+                with open(model_dir + "/model.json", "r") as f:
+                    model_json = json.load(f)
+                    feature_names = model_json["learner"]["feature_names"]
+                    feature_order[input_zones[zone]] = feature_names
+    
+    return models, raw_features, feature_order
 
-            model_dirs[(zone, output_type)] = model.download()
-            models[(zone, output_type)] = XGBRegressor()
-            models[(zone, output_type)].load_model(model_dirs[(zone, output_type)] + "/model.json")
+def get_raw_features(raw_features: dict[str, list[FeatureModel]]) -> dict[str, list[str]]:
+    return {zone: [feature.name for feature in features] for zone, features in raw_features.items()}
 
-    return models
-
-RAW_FEATURES = {
-    "SE": [
-        "gas", "solar", "hydro", "wind", "nuclear", "other",
-        "total", "load", "import", "export"
-    ],
-    "SE_SE1": [
-        "solar", "hydro", "wind", "other",
-        "total", "load", "import", "export"
-    ],
-    "SE_SE2": [
-        "gas", "solar", "hydro", "wind", "other",
-        "total", "load", "import", "export"
-    ],
-    "SE_SE3": [
-        "gas", "solar", "hydro", "wind", "nuclear", "other",
-        "total", "load", "import", "export"
-    ],
-    "SE_SE4": [
-        "gas", "solar", "hydro", "wind", "other",
-        "total", "load", "import", "export"
-    ],
-}
-
-FEATURE_ORDER = {
-    "SE": [
-        "gas_portion",
-        "solar_portion",
-        "hydro_portion",
-        "wind_portion",
-        "nuclear_portion",
-        "other_portion",
-        "import_portion",
-        "available_total",
-        "load_portion",
-        "export_portion",
-        "used_total"
-    ],
-    "SE_SE1": [
-        "solar_portion",
-        "hydro_portion",
-        "wind_portion",
-        "other_portion",
-        "import_portion",
-        "available_total",
-        "load_portion",
-        "export_portion",
-        "used_total"
-    ],
-    "SE_SE2": [
-        "gas_portion",
-        "solar_portion",
-        "hydro_portion",
-        "wind_portion",
-        "other_portion",
-        "import_portion",
-        "available_total",
-        "load_portion",
-        "export_portion",
-        "used_total"
-    ],
-    "SE_SE3": [
-        "gas_portion",
-        "solar_portion",
-        "hydro_portion",
-        "wind_portion",
-        "nuclear_portion",
-        "other_portion",
-        "import_portion",
-        "available_total",
-        "load_portion",
-        "export_portion",
-        "used_total"
-    ],
-    "SE_SE4": [
-        "gas_portion",
-        "solar_portion",
-        "hydro_portion",
-        "wind_portion",
-        "other_portion",
-        "import_portion",
-        "available_total",
-        "load_portion",
-        "export_portion",
-        "used_total"
-    ]
-}
-
-def to_model_input(zone: str, req: CarbonIntensityRequest) -> np.ndarray:
-    df = pd.DataFrame([{
-        "datetime": req.datetime,
-        "gas": req.gas,
-        "solar": req.solar,
-        "hydro": req.hydro,
-        "wind": req.wind,
-        "nuclear": req.nuclear,
-        "other": req.other,
-        "total": req.total,
-        "load": req.load,
-        "import": req.import_,
-        "export": req.export,
-    }])
+def to_model_input(zone: str, req: CarbonIntensityRequest, raw_features: dict, feature_order: dict) -> np.ndarray:
+    df = pd.DataFrame(
+        [
+            {
+                "datetime": req.date_time,
+                "gas": req.gas,
+                "solar": req.solar,
+                "hydro": req.hydro,
+                "wind": req.wind,
+                "nuclear": req.nuclear,
+                "other": req.other,
+                "total": req.total,
+                "load": req.load,
+                "import": req.import_,
+                "export": req.export,
+            }
+        ]
+    )
 
     Xt = model_dependent_transform(
         X=df,
-        selected_features=RAW_FEATURES[zone] + ["datetime"],
+        selected_features=get_raw_features(raw_features)[zone] + ["datetime"],
     )
     Xt = Xt.drop(columns=["datetime"], errors="ignore")
-    Xt = Xt[FEATURE_ORDER[zone]]
+    Xt = Xt[feature_order[zone]]
     return Xt.to_numpy(dtype=np.float32)
