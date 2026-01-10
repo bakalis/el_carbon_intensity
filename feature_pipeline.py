@@ -83,7 +83,18 @@ for zone in settings.ZONES:
     df = pd.concat([df, create_emission_df(zone_data)], ignore_index=True)
 df = df.sort_values(by="datetime")
 df["datetime_id"] = df["datetime"].map(datetime_to_unix).astype("int64")
-carbon_intensity_fg.insert(df)
+carbon_intensity_fg.insert(df, wait=True)
+ci_fv_query = (
+    carbon_intensity_fg.select(["datetime_id", "zone_id", "datetime", "ci_direct", "ci_lifecycle", "data_estimated"])
+)
+try:
+    ci_fv = fs.create_feature_view(
+        name="ci_actuals_fv", 
+        version=None,
+        query=ci_fv_query,
+    )
+except Exception as e:
+    print(str(e))
 
 # Add new electricity generation data
 electricity_generation_fg = fs.get_feature_group(

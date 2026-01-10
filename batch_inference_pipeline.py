@@ -137,3 +137,14 @@ predictions_fg = fs.get_or_create_feature_group(
     online_enabled=True,
 )
 predictions_fg.insert(prediction_df, wait=True)
+predictions_query = (
+    predictions_fg.select(["datetime", "datetime_id", "zone_id", "ci_direct_prediction", "ci_lifecycle_prediction", "hours_before_forecast"])
+)
+try:
+    ci_fv = fs.create_feature_view(
+        name="ci_predictions_fv", 
+        version=None,
+        query=predictions_query,
+    )
+except Exception as e:
+    print(str(e))
