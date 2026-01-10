@@ -40,7 +40,9 @@
                  (for [[intensity-type entries] intensity-types]
                    [intensity-type
                     (into {}
-                          (map (fn [e] [(hour-from-iso-int (get e "date_time")) e]) entries))]))])))
+                          (map (fn [[hour entries-for-hour]]
+                                 [hour (apply min-key #(get % "hours_before_forecast") entries-for-hour)])
+                               (group-by #(hour-from-iso-int (get % "date_time")) entries)))]))])))
 
 (defn get-available-dates [data]
   (when data

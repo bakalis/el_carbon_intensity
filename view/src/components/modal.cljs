@@ -1,5 +1,5 @@
 (ns components.modal 
-  (:require [state.state :refer [app-state close-modal! set-active-tab!]]
+  (:require [state.state :refer [app-state close-modal! set-active-tab! set-selected-before-hours!]]
             [clojure.walk :refer [keywordize-keys]]
             [clojure.string :as str]
             [components.hindcast-tab :refer [hindcast-chart]]
@@ -15,7 +15,7 @@
       [:div.modal-overlay {:on-click close-modal!}
        [:div.modal-content {:on-click #(.stopPropagation %)}
         [:div.modal-header
-         [:h2 (str zone-id " - " (:selected-date @app-state) " - " (str/capitalize intensity-type) " Carbon Intensity")]
+         [:h2 (str zone-id " | " (:selected-date @app-state) " | " (str/capitalize intensity-type) " Carbon Intensity")]
          [:button.close-btn {:on-click close-modal!} "×"]]
 
         [:div.tab-navigation
@@ -34,7 +34,7 @@
             (when carbon-data 
               (if (= active-tab :playground)
                 [playground-content]
-                [hindcast-chart carbon-data]))])]
+                [hindcast-chart carbon-data set-selected-before-hours!]))])]
 
         [:div.modal-footer
          [:button.btn-primary {:on-click close-modal!} "Close"]]]])))

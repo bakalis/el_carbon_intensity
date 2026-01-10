@@ -25,6 +25,7 @@
                             :carbon-intensities nil
                             :modal {:open false
                                     :feature nil
+                                    :selected-before-hours nil
                                     :error nil
                                     :active-tab :hindcast}}))
 
@@ -114,13 +115,25 @@
                   (js/console.error "Prediction error:" err)
                   {:error (.-message err)})))))
 
+(defn get-min-before-hours! [feature]
+  (let [zone-id (get-in feature [:properties :zoneName])
+        intensities (:carbon-intensities @app-state)
+        intensity-type (name (:intensity-type @app-state))
+        carbon-data (get-in intensities [zone-id intensity-type])]
+    (when (and carbon-data (seq carbon-data))
+      (let [hours-before-values (keep #(get % "hours_before_forecast") carbon-data)]
+        (when (seq hours-before-values)
+          (apply min hours-before-values))))))
+
 (defn set-active-tab! [tab]
   (swap! app-state assoc-in [:modal :active-tab] tab))
 
 (defn open-modal! [feature]
-  (swap! app-state assoc :modal {:open true 
-                                 :feature feature
-                                 :active-tab :hindcast}))
+  (let [selected-before-hours (get-min-before-hours! feature)] 
+    (swap! app-state assoc :modal {:open true 
+                                   :feature feature
+                                   :selected-before-hours selected-before-hours
+                                   :active-tab :hindcast})))
 
 (defn close-modal! []
   (swap! app-state assoc-in [:modal :open] false))
@@ -142,6 +155,11 @@
                                   SE-2/data 
                                   SE-3/data 
                                   SE-4/data]))))))
+
+(defn set-selected-before-hours! [selected-hour]
+  (swap! app-state
+        (fn [state]
+          (assoc-in state [:modal :selected-before-hours] selected-hour))))
 
 (c/comment 
   (-> @app-state 
