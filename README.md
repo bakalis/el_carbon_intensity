@@ -10,6 +10,13 @@ A full-stack project for **forecasting Sweden's electricity carbon intensity**�
 
 ---
 
+## URLs
+
+https://bakalis.github.io/el_carbon_intensity/
+https://bakalis-el-carbon-intensity-backend.hf.space/docs
+
+---
+
 ## Features
 
 - Forecasts **direct and lifecycle carbon intensity** per zone and hour (direct and lifecycle).
