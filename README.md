@@ -20,7 +20,7 @@ HuggingFace Space - <https://huggingface.co/spaces/bakalis/el_carbon_intensity_b
 
 ## Features
 
-- Forecasts **direct and lifecycle carbon intensity** per zone and hour (direct and lifecycle).
+- Forecasts **carbon intensity** per zone and hour (direct and lifecycle).
     
 - Stores features and predictions in a **feature store** for training and serving.
     
