@@ -179,6 +179,7 @@ def day_all_get_carbon_intensity_predictions(
 
     actuals_df = ci_fv.get_feature_vectors(entries, return_type="pandas", allow_missing=True)
     actuals_df = actuals_df.dropna(subset=["datetime"])
+    actuals_df = actuals_df[actuals_df["data_estimated"] != True]
     preds_raw_df = cp_fv.get_feature_vectors(entries_pred, return_type="pandas", allow_missing=True)
     preds_raw_df = preds_raw_df.dropna(subset=["datetime"])
     preds_raw_df = preds_raw_df.sort_values(['datetime', 'hours_before_forecast'])
