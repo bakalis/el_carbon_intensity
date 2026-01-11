@@ -54,28 +54,27 @@ class CarbonIntensityResponse(BaseModel):
     unit: str = "gCO2eq/kWh"
 
 
-def load_models(project):
+def load_models(project, zones):
     mr = project.get_model_registry()
-    model_zones = ["SE", "SE_SE1", "SE_SE2", "SE_SE3", "SE_SE4"]
-    input_zones = {"SE": "SE", "SE_SE1": "SE-SE1", "SE_SE2": "SE-SE2", "SE_SE3": "SE-SE3", "SE_SE4": "SE-SE4"}
     model_output_types = ["lifecycle", "direct"]
     model_dirs = {}
     models = {}
     raw_features: dict[str, list[FeatureModel]] = {}
     feature_order: dict[str, list[str]] = {}
     
-    for zone in model_zones:
+    for zone in zones:
         for output_type in model_output_types:
-            model_name = f"ci_{output_type}_xgboost_{zone}_model"
+            zone_id = zone.replace("-", "_")
+            model_name = f"ci_{output_type}_xgboost_{zone_id}_model"
             model = mr.get_model(name=model_name, version=2)
             model_dir = model.download()
-            model_dirs[(input_zones[zone], output_type)] = model_dir
-            models[(input_zones[zone], output_type)] = XGBRegressor()
-            models[(input_zones[zone], output_type)].load_model(
+            model_dirs[(zone, output_type)] = model_dir
+            models[(zone, output_type)] = XGBRegressor()
+            models[(zone, output_type)].load_model(
                 model_dir + "/model.json"
             )
             
-            if input_zones[zone] not in raw_features:
+            if zone not in raw_features:
                 with open(model_dir + "/metadata.json", "r") as f:
                     metadata = json.load(f)
                     features = []
@@ -86,12 +85,12 @@ def load_models(project):
                             max=int(feature_stats["max"]),
                             median=int(feature_stats["median"])
                         ))
-                    raw_features[input_zones[zone]] = features
+                    raw_features[zone] = features
                 
                 with open(model_dir + "/model.json", "r") as f:
                     model_json = json.load(f)
                     feature_names = model_json["learner"]["feature_names"]
-                    feature_order[input_zones[zone]] = feature_names
+                    feature_order[zone] = feature_names
     
     return models, raw_features, feature_order
 

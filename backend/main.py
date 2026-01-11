@@ -80,7 +80,7 @@ def load_models_sync():
         if project is None:
             models_ready = False
             return
-        models, raw_features, feature_order = load_models(project)
+        models, raw_features, feature_order = load_models(project, os.environ.get("ZONES", "").split(","))
         models_ready = True
     except Exception:
         logging.exception("load_models_sync failed")
