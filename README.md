@@ -95,62 +95,65 @@ HuggingFace Space - <https://huggingface.co/spaces/bakalis/el_carbon_intensity_b
 
 ## Data & ML Pipelines
 
+To be able to run the workflows locally (after cloning the repository), the relevant packages can be installed like this:
+
+```bash
+uv venv --python 3.11
+uv sync --frozen
+```
+
+For it to work, create a .env file from the .env-prototype with the HOPSWORKS_*, ZONES properties, as well as API keys for both Entso-E and Electricity-Maps.
+
+
 ## 1. Ingestion & Feature Engineering
 
-- Pulls raw electricity data (generation, flows, consumption, etc.).
+- Backfill pipelines insert scraped electricity data ([Entso-E](https://transparency.entsoe.eu)) and carbon intensity data ([Electricity-Maps](https://app.electricitymaps.com)) into Hopsworks feature store
     
-- Normalizes timestamps to UTC and computes a `datetime_id` (Unix seconds).
-    
+- Separate feature pipeline runs periodically (every hour) with Github Actions to pull and insert current values
+
 - Derives per-zone features, such as:
     
     - Generation mix per technology
         
     - Imports/exports
         
-    - Time features (hour, day-of-week, etc.)
+    - Electricity consumption/Load
         
-- Writes features to feature groups in the feature store.
-    
+Usage:
 
+`uv run python feature_pipeline.py`
 ## 2. Model Training
 
-- Reads historical features and labels from the **offline** store.
+- Reads historical features and labels from the **offline** store
     
-- Splits into train/validation sets.
-    
-- Trains regression models (e.g. XGBoost / similar) for:
+- Trains regression models XGBoost for:
     
     - Direct carbon intensity
         
     - Lifecycle carbon intensity
         
-- Logs metrics and persists trained models.
+- Logs metrics and persists trained models
     
+Usage:
 
-Typical usage (example):
+`uv run python training_pipeline.py`
 
-bash
 
-`python pipelines/train_model.py`
+## 3. Batch Inference
 
-## 3. Prediction
-
-- Runs periodically (e.g. every 45 minutes) via a scheduler.
+- Runs every hour via Github Actions
     
-- Reads latest features from the **online/offline** store.
-    
-- Loads the trained model(s) and predicts for multiple horizons.
+- Loads the trained model(s) and electricity forecasts for up to 72 hours
+
+- Predicts direct and lifecycle carbon intensity for that timeframe
     
 - Writes predictions into a **predictions feature group** with keys like:
     
     - `datetime_id`, `zone_id`, `hours_before_forecast`.
-        
 
-Example:
+Usage:
 
-bash
-
-`python pipelines/generate_predictions.py`
+`uv run python batch_inference_pipeline.py`
 
 ---
 
@@ -183,8 +186,6 @@ Run locally (example):
 
 - Clone the repository
 - Create a .env file from the .env-prototype with the HOPSWORKS_* and ZONES properties
-
-bash
 
 ```bash
 python -m venv .venv
