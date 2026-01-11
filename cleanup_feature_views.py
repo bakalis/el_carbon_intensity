@@ -30,7 +30,7 @@ def main():
                 print(f"[DRY-RUN] Would delete {fv.name} v{fv.version}")
             else:
                 print(f"Deleting version: {fv.version}")
-                fs.delete_feature_view(name=fv.name, version=fv.version)
+                fv.delete()
         except Exception as e:
             print(
                 f"Could not delete {fv.name} v{fv.version}: {e}"
