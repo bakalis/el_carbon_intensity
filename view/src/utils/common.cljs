@@ -18,7 +18,6 @@
      :nuclear (get-median "nuclear")
      :battery_storage (get-median "battery_storage")
      :other (get-median "other")
-     :total (get-median "total")
      :load (get-median "load")
      :import_ (get-median "import")
      :export (get-median "export")}))
