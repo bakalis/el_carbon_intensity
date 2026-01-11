@@ -5,7 +5,7 @@ from collections import defaultdict
 
 PROJECT_NAME = "el_carbon_intensity"
 DRY_RUN = False
-KEEP_N = 1
+KEEP_N = 2
 
 load_dotenv()
 
