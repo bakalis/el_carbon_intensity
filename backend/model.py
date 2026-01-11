@@ -29,17 +29,16 @@ class CarbonIntensityRequest(BaseModel):
     date_time: Optional[datetime] = None
     output_type: Optional[str] = "lifecycle"  # "lifecycle" or "direct"
 
-    gas: Optional[float] = None
-    solar: Optional[float] = None
-    hydro: Optional[float] = None
-    wind: Optional[float] = None
-    nuclear: Optional[float] = None
-    other: Optional[float] = None
+    gas: Optional[float] = 0.0
+    solar: Optional[float] = 0.0
+    hydro: Optional[float] = 0.0
+    wind: Optional[float] = 0.0
+    nuclear: Optional[float] = 0.0
+    other: Optional[float] = 0.0
 
-    total: Optional[float] = None
-    load: Optional[float] = None
-    import_: Optional[float] = None
-    export: Optional[float] = None
+    load: Optional[float] = 0.0
+    import_: Optional[float] = 0.0
+    export: Optional[float] = 0.0
 
     class Config:
         populate_by_name = True
@@ -98,6 +97,8 @@ def get_raw_features(raw_features: dict[str, list[FeatureModel]]) -> dict[str, l
     return {zone: [feature.name for feature in features] for zone, features in raw_features.items()}
 
 def to_model_input(zone: str, req: CarbonIntensityRequest, raw_features: dict, feature_order: dict) -> np.ndarray:
+    total = req.gas + req.solar + req.hydro + req.wind + req.nuclear + req.other
+
     df = pd.DataFrame(
         [
             {
@@ -108,7 +109,7 @@ def to_model_input(zone: str, req: CarbonIntensityRequest, raw_features: dict, f
                 "wind": req.wind,
                 "nuclear": req.nuclear,
                 "other": req.other,
-                "total": req.total,
+                "total": total,
                 "load": req.load,
                 "import": req.import_,
                 "export": req.export,

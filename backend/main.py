@@ -165,7 +165,7 @@ def day_all_get_carbon_intensity_predictions(
     global ci_fv, cp_fv
     start = time.perf_counter()
     timestamps = hourly_unix_utc(request_date)
-    zone_ids = ["SE", "SE-SE1", "SE-SE2", "SE-SE3", "SE-SE4"]
+    zone_ids = os.environ.get("ZONES", "").split(",")
     ci_types = ["lifecycle", "direct"]
     entries = [{"datetime_id": ts, "zone_id": z} for ts in timestamps for z in zone_ids]
 

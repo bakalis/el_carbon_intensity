@@ -31,8 +31,8 @@
 
 
 ;; API configuration
-(def api-base-url "https://bakalis-el-carbon-intensity-backend.hf.space")
-; (def api-base-url "http://localhost:7860")
+; (def api-base-url "https://bakalis-el-carbon-intensity-backend.hf.space")
+(def api-base-url "http://localhost:7860")
 
 (defn fetch-raw-features! []
   (-> (js/fetch (str api-base-url "/raw-features"))
