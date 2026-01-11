@@ -246,3 +246,9 @@ Then open the printed URL (default `http://localhost:8080`).
  All needed configuration values are located in the .env-prototype file. Fill in your own.      
 
 ---
+
+## Cleanup
+
+  There is a GitHub action called cleanup-feature-views that is run every 6 hours, deleting all the old versions of our live feature views
+
+---
