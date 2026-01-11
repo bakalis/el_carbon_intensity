@@ -12,8 +12,9 @@ A full-stack project forÂ **forecasting Sweden's electricity carbon intensity**Â
 
 ## URLs
 
-https://bakalis.github.io/el_carbon_intensity/
-https://bakalis-el-carbon-intensity-backend.hf.space/docs
+Web App - 	<https://bakalis.github.io/el_carbon_intensity/> <br>
+API Docs -	 <https://bakalis-el-carbon-intensity-backend.hf.space/docs> <br>
+HuggingFace Space - <https://huggingface.co/spaces/bakalis/el_carbon_intensity_backend>
 
 ---
 
